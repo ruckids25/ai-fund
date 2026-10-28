@@ -17,3 +17,5 @@ packages = ["core"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+addopts = "-m 'not live'"
+markers = ["live: hits real network APIs (run with -m live)"]

@@ -91,6 +91,14 @@ ai-fund/
 - 2026-10-28: แก้ RISK_RULES ข้อ 2 และ 7 (ยังไม่มี position เปิด) — เหตุผล: ทุน 15K THB + กฎ margin 20% ทำให้หุ้นแบบเงินสดเสี่ยงได้แค่ ~120 THB/เทรด และเปิด 3 ตัวไม่ได้ จึงแยกทุนหุ้นใน paper = $3,000 (ค่าเริ่มต้น ต้องเท่าทุนจริงที่พร้อมใส่), cap หุ้น 33%/ตัว, งบขาดทุน 15K ยังใช้ร่วมกัน, เพิ่มเกณฑ์ ≥30 เทรด/desk และต้องมีบัญชีหุ้นจริงก่อน go-live ฝั่งหุ้น
 
 ## สถานะล่าสุด
+**2026-10-28 — Phase 1 (ส่วนโค้ด) เสร็จ**
+- `envs/data` (Python 3.12, uv): openbb-core + openbb-equity + openbb-yfinance, ccxt 4.5, pandas 3.1, pandas_market_calendars
+- `core/data.py`: `get_stock_daily` (OpenBB/yfinance), `get_crypto_ohlcv` (ccxt OKX public, แบ่งหน้าเกิน 300 แท่ง), `validate_candles`, `expected_index` (ปฏิทิน NYSE)
+  - index = UTC tz-aware, ตัดแท่งที่ยังไม่ปิดทิ้งเสมอ (กัน look-ahead)
+- tests: offline 15 ผ่าน, live (`pytest -m live`) 9 ผ่าน — หุ้น 250 วัน + crypto 1h/4h/1d ไม่มีแท่งหาย/ซ้ำ
+- `scripts/daily_prices.py [--dry]` สรุปราคาปิด watchlist → Telegram (dry-run ผ่าน, ยังไม่ส่งจริงเพราะยังไม่มี `.env`)
+- ค้าง: cron บน VPS ทุกวันทำการ (~06:00 TH), heartbeat, fork daily_stock_analysis → เกณฑ์ผ่าน = มาครบ 5 วันทำการติด
+
 **2026-10-28 — Phase 0 (ส่วนโค้ดบน Mac) เสร็จ**
 - git init (ยังไม่มี commit / ยังไม่มี remote), โครงสร้างโฟลเดอร์ + `.gitignore`
 - `.env.example` (เพิ่ม `TG_FT_TOKEN` สำหรับ bot freqtrade แยก, `LEDGER_PATH`, `HALT_FLAG_PATH`)
