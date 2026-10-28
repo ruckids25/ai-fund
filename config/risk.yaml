@@ -1,0 +1,37 @@
+# ตัวเลขทั้งหมดต้องตรงกับ RISK_RULES.md — ไฟล์นี้เป็นไฟล์เดียวที่โค้ดอ่าน
+# แก้ได้เฉพาะตอนไม่มี position เปิด + บันทึกเหตุผลใน CONTEXT.md
+version: 1
+
+currency: THB
+fx:
+  usdthb: 33.0            # TODO อัปเดตทุกสัปดาห์ (ค่าประมาณ ต้องตรวจก่อนใช้)
+  updated: 2026-10-28
+
+loss_budget:              # นับ realized + unrealized รวมทุก desk (THB)
+  hard_stop: -15000       # ปิดทุก position, หยุดทุกบอท
+  soft_stop: -7500        # หยุดเปิด position ใหม่ ทบทวน 1 สัปดาห์
+  daily_stop: -600        # ไม่เปิดเทรดใหม่จนถึงวันถัดไป (UTC)
+  risk_per_trade: 300     # ใช้คำนวณ size จากระยะ stop
+
+positions:
+  max_open_total: 3       # รวมทุก desk
+
+desks:
+  crypto:
+    capital_thb: 15000    # ฝาก OKX sub-account ไม่เกินนี้
+    max_leverage: 5
+    margin_mode: isolated
+    max_margin_pct: 0.20  # margin ต่อ position / ทุน desk
+    liq_buffer_pct: 0.50  # liq ต้องห่างกว่า stop >= 50% ของระยะ stop
+  stocks:
+    capital_usd: 3000     # paper — ต้องเท่าทุนจริงที่พร้อมใส่ถ้า go-live
+    margin: false         # cash only
+    max_position_pct: 0.33
+    max_total_pct: 1.00
+
+api:
+  monthly_limit_usd: 30   # ตั้งที่ Anthropic console ด้วย
+  max_committee_tickers_per_day: 5
+
+live:
+  max_size_pct_at_start: 0.25

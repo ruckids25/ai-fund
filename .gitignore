@@ -1,0 +1,27 @@
+# secrets
+.env
+.env.*
+!.env.example
+
+# runtime
+vendor/
+user_data/data/
+crypto/freqtrade/user_data/data/
+crypto/freqtrade/user_data/*.sqlite*
+logs/
+data/
+*.sqlite
+*.sqlite-*
+*.db
+halt.flag
+
+# python
+.venv/
+envs/
+__pycache__/
+*.pyc
+.pytest_cache/
+*.egg-info/
+
+# os
+.DS_Store

@@ -1,0 +1,8 @@
+stocks:
+  - NVDA
+  - AAPL
+  - MSFT
+
+crypto:                   # ccxt unified symbol ของ OKX perpetual swap
+  - BTC/USDT:USDT
+  - ETH/USDT:USDT
