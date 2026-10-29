@@ -58,9 +58,9 @@
 ### Phase 2 — Kronos filter + validation (สัปดาห์ 2–3)
 - [x] venv `envs/kronos` (torch CPU) + clone Kronos ลง `vendor/`
 - [x] `desks/research/kronos_filter.py`: input candle → 100 paths → คืน `p_up`, expected return, quantile
-- [ ] **Backtest ตัว filter:** walk-forward บนข้อมูลที่ Kronos ไม่เคยเห็น (หลัง training cutoff ของโมเดล)
+- [x] **Backtest ตัว filter:** walk-forward บนข้อมูลที่ Kronos ไม่เคยเห็น (หลัง training cutoff ของโมเดล)
   - วัด: hit rate ของ `p_up ≥ 0.70` เทียบกับ base rate (% วันขึ้นทั้งหมด), จำนวนสัญญาณต่อเดือน, เวลารันต่อ ticker
-- [ ] บันทึกผลลง `backtests/kronos_YYYYMMDD/`
+- [x] บันทึกผลลง `backtests/kronos_YYYYMMDD/` → `backtests/kronos_20261029/` **ไม่ผ่าน** (hit rate ไม่ต่างจาก base, calibration แบน) → Kronos เป็นข้อมูลให้ committee
 
 **เกณฑ์ผ่าน:** hit rate สูงกว่า base rate อย่างมีนัย (ไม่ใช่แค่ > 50%) และรู้ว่าต่อเดือนมีกี่สัญญาณ
 **ถ้าไม่ผ่าน:** ใช้ Kronos เป็นแค่ feature/ข้อมูลให้ committee แทนการเป็นด่านกรอง
