@@ -25,3 +25,6 @@ __pycache__/
 
 # os
 .DS_Store
+
+# backtest runtime logs
+backtests/*/run.log
