@@ -42,7 +42,7 @@
 - [x] git init + โครงสร้างโฟลเดอร์ + `.gitignore`
 - [x] `.env.example`, `config/risk.yaml`, `config/watchlist.yaml`
 - [x] `core/notify.py` (send-only), `core/ledger.py` (SQLite WAL mode)
-- [ ] ตรวจสเปก VPS (`scripts/check_vps.sh` พร้อมแล้ว — รอ SSH/ผลจากผู้ใช้)
+- [x] ตรวจสเปก VPS (VPS เดิมไม่พอ → เช่าใหม่ 2 vCPU/3.3G)
 
 **เกณฑ์ผ่าน:** `.env` ครบ, `python -m core.notify "hello"` ส่งได้, ledger สร้างตารางได้, รายงานสเปก VPS
 
@@ -50,7 +50,7 @@
 - [x] venv `envs/data` + `core/data.py` (`get_stock_daily`, `get_crypto_ohlcv`)
 - [x] test: candle ไม่หาย/ไม่ซ้ำ (ใช้ปฏิทินตลาด NYSE ไม่ใช่นับวันธรรมดา — วันหยุด US จะทำให้ test fail หลอก)
 - [x] timestamp ทุกตัวเป็น UTC, tz-aware
-- [ ] cron ส่งราคาปิดล่าสุดเข้า Telegram ทุกวันทำการ (`scripts/daily_prices.py` พร้อม — รอ VPS + `.env`)
+- [x] cron ส่งราคาปิดล่าสุดเข้า Telegram ทุกวันทำการ (VPS 23:00 UTC จ–ศ)
 - [ ] **เพิ่ม:** heartbeat — ถ้าไม่มีข้อความเข้า Telegram ภายในเวลาที่กำหนด แปลว่าระบบตาย
 
 **เกณฑ์ผ่าน:** morning note + ราคาปิด มาทุกวันทำการ 5 วันติด

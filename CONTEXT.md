@@ -92,6 +92,17 @@ ai-fund/
 - 2026-10-28: แก้ RISK_RULES ข้อ 2 และ 7 (ยังไม่มี position เปิด) — เหตุผล: ทุน 15K THB + กฎ margin 20% ทำให้หุ้นแบบเงินสดเสี่ยงได้แค่ ~120 THB/เทรด และเปิด 3 ตัวไม่ได้ จึงแยกทุนหุ้นใน paper = $3,000 (ค่าเริ่มต้น ต้องเท่าทุนจริงที่พร้อมใส่), cap หุ้น 33%/ตัว, งบขาดทุน 15K ยังใช้ร่วมกัน, เพิ่มเกณฑ์ ≥30 เทรด/desk และต้องมีบัญชีหุ้นจริงก่อน go-live ฝั่งหุ้น
 
 ## สถานะล่าสุด
+**2026-10-29 — Deploy VPS ใหม่ + cron Phase 1 เริ่มรัน**
+- VPS ใหม่ (Vultr) Ubuntu 26.04, 2 vCPU AVX2, RAM 3.3G + swap 4.8G, disk ว่าง 36G, มีทั้ง IPv4 (ใช้กับ OKX whitelist) และ IPv6 — address ดูใน `~/.ssh/config` บน Mac (ไม่เก็บใน repo)
+- SSH จาก Mac: `ssh aifund` (root) / `ssh aifund-app` (user aifund ที่รันบอท) ใช้ key `~/.ssh/id_ed25519_aifund` แยกจาก PRS bot (ลบ key prs-bot ออกจาก VPS แล้ว)
+- Hardening: ปิด password login, root key-only, ufw เปิดแค่ 22
+- โค้ดที่ `/home/aifund/ai-fund` (clone ผ่าน read-only deploy key), `.venv` + `envs/data` ด้วย uv Python 3.12 — test offline + live ผ่านบน VPS
+- `.env` ส่งด้วย scp (600) — Telegram ส่งจาก VPS ได้
+- cron (UTC): `0 23 * * 1-5 scripts/cron_daily_prices.sh` = 06:00 TH จ–ศ, log ที่ `logs/`, ล้มแล้วแจ้ง Telegram
+- เริ่มนับเกณฑ์ผ่าน Phase 1 (5 วันทำการติด) ตั้งแต่เช้า 30 ต.ค. (TH)
+- **ค้าง:** Telegram tokens + Alpaca paper key ยังเป็นชุดที่เคยส่งในแชท → **ต้อง revoke/regenerate ก่อน Phase 4**; ANTHROPIC_API_KEY ก่อน Phase 3; OKX sub-account; fork daily_stock_analysis; ตรวจ fx.usdthb; heartbeat
+- Deploy: แก้บน Mac → `git push` → `ssh aifund-app 'cd ai-fund && git pull'`
+
 **2026-10-28 — Phase 1 (ส่วนโค้ด) เสร็จ**
 - `envs/data` (Python 3.12, uv): openbb-core + openbb-equity + openbb-yfinance, ccxt 4.5, pandas 3.1, pandas_market_calendars
 - `core/data.py`: `get_stock_daily` (OpenBB/yfinance), `get_crypto_ohlcv` (ccxt OKX public, แบ่งหน้าเกิน 300 แท่ง), `validate_candles`, `expected_index` (ปฏิทิน NYSE)
