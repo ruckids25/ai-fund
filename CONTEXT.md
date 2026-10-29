@@ -81,13 +81,14 @@ ai-fund/
 
 ## เรื่องที่ต้องตรวจสอบ
 - [ ] Alpaca เปิดบัญชี **live** ให้ผู้พำนักในไทยได้หรือไม่ (paper ใช้ได้แน่นอน)
-- [ ] สเปก VPS (RAM/CPU) พอสำหรับ Kronos-small บน CPU หรือไม่
+- [x] สเปก VPS (RAM/CPU) พอสำหรับ Kronos-small บน CPU หรือไม่ → **ไม่พอ** (2026-10-28: 45.76.159.133 Ubuntu 24.04, 1 vCPU EPYC AVX2, RAM 955Mi ว่าง ~540Mi + swap 2.3G, disk ว่าง 16G, ไม่มี Docker/uv, UTC + NTP sync ok, มี PRS bot รันอยู่) — พอสำหรับ Phase 1 (cron วันละครั้ง) แต่ไม่พอ Kronos + freqtrade
 - [ ] TradingAgents รองรับ crypto ได้ดีแค่ไหน ถ้าไม่ดี committee ฝั่ง crypto ใช้ strategy rule-based แทน
 - [ ] อัตราแลกเปลี่ยน THB/USD สำหรับแปลงงบใน `risk.yaml`
 
 ## Log การตัดสินใจ
 - 2026-10-27: เลือกตาม stack ในบทความ "10 GitHub repos" ครอบคลุมหุ้น + crypto, เริ่มใหม่ไม่ใช้ strategy เดิม, แยกจาก PRS bot, งบขาดทุน 15K THB, leverage ≤ 5x, ตัด hummingbot และ funding arb
 - 2026-10-28: พัฒนาบน Mac → private GitHub repo → `git pull` บน VPS (แทนการเขียนบน VPS ตรงๆ), สเปก VPS ให้ตรวจตอน Phase 0, ทุนบัญชีบอท = 15,000 THB (เท่างบขาดทุน — OKX ฝากไม่เกินนี้, Alpaca paper ตั้ง equity เทียบเท่า), strategy crypto ตัวแรก: Claude เสนอ 2–3 แบบให้เลือกก่อน Phase 4, THB/USD: fix ใน risk.yaml อัปเดตรายสัปดาห์ (default จนกว่าจะเปลี่ยน)
+- 2026-10-28: เช่า VPS ใหม่แยกจาก PRS bot (VPS เดิม 1 vCPU/1GB ไม่พอ Kronos + freqtrade และแยกขาดจาก PRS bot ทั้งเครื่อง + IP whitelist OKX ไม่ปนกัน)
 - 2026-10-28: แก้ RISK_RULES ข้อ 2 และ 7 (ยังไม่มี position เปิด) — เหตุผล: ทุน 15K THB + กฎ margin 20% ทำให้หุ้นแบบเงินสดเสี่ยงได้แค่ ~120 THB/เทรด และเปิด 3 ตัวไม่ได้ จึงแยกทุนหุ้นใน paper = $3,000 (ค่าเริ่มต้น ต้องเท่าทุนจริงที่พร้อมใส่), cap หุ้น 33%/ตัว, งบขาดทุน 15K ยังใช้ร่วมกัน, เพิ่มเกณฑ์ ≥30 เทรด/desk และต้องมีบัญชีหุ้นจริงก่อน go-live ฝั่งหุ้น
 
 ## สถานะล่าสุด
