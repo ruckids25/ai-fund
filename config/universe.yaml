@@ -1,0 +1,6 @@
+# Research universe สำหรับ backtest ตัวกรอง (ใหญ่กว่า watchlist เพื่อให้มีสัญญาณพอสรุปทางสถิติ)
+# หุ้น US ขนาดใหญ่ สภาพคล่องสูง หลายกลุ่มอุตสาหกรรม
+stocks: [AAPL, MSFT, NVDA, AMZN, GOOGL, META, TSLA, AVGO, AMD, ORCL,
+         ADBE, CRM, NFLX, JPM, BAC, V, MA, UNH, LLY, JNJ,
+         ABBV, MRK, XOM, CVX, PG, KO, PEP, WMT, COST, HD]
+crypto: [BTC/USDT:USDT, ETH/USDT:USDT]

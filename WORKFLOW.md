@@ -56,8 +56,8 @@
 **เกณฑ์ผ่าน:** morning note + ราคาปิด มาทุกวันทำการ 5 วันติด
 
 ### Phase 2 — Kronos filter + validation (สัปดาห์ 2–3)
-- [ ] venv `envs/kronos` (torch CPU) + clone Kronos ลง `vendor/`
-- [ ] `desks/research/kronos_filter.py`: input candle → 100 paths → คืน `p_up`, expected return, quantile
+- [x] venv `envs/kronos` (torch CPU) + clone Kronos ลง `vendor/`
+- [x] `desks/research/kronos_filter.py`: input candle → 100 paths → คืน `p_up`, expected return, quantile
 - [ ] **Backtest ตัว filter:** walk-forward บนข้อมูลที่ Kronos ไม่เคยเห็น (หลัง training cutoff ของโมเดล)
   - วัด: hit rate ของ `p_up ≥ 0.70` เทียบกับ base rate (% วันขึ้นทั้งหมด), จำนวนสัญญาณต่อเดือน, เวลารันต่อ ticker
 - [ ] บันทึกผลลง `backtests/kronos_YYYYMMDD/`

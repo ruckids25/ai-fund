@@ -92,6 +92,14 @@ ai-fund/
 - 2026-10-28: แก้ RISK_RULES ข้อ 2 และ 7 (ยังไม่มี position เปิด) — เหตุผล: ทุน 15K THB + กฎ margin 20% ทำให้หุ้นแบบเงินสดเสี่ยงได้แค่ ~120 THB/เทรด และเปิด 3 ตัวไม่ได้ จึงแยกทุนหุ้นใน paper = $3,000 (ค่าเริ่มต้น ต้องเท่าทุนจริงที่พร้อมใส่), cap หุ้น 33%/ตัว, งบขาดทุน 15K ยังใช้ร่วมกัน, เพิ่มเกณฑ์ ≥30 เทรด/desk และต้องมีบัญชีหุ้นจริงก่อน go-live ฝั่งหุ้น
 
 ## สถานะล่าสุด
+**2026-10-29 — Phase 2 เริ่ม: Kronos filter + walk-forward backtest กำลังรัน (Mac, MPS)**
+- `envs/kronos` (torch 2.15, Kronos-small จาก HF), Kronos clone ที่ `vendor/Kronos` (commit 67b630e)
+- `desks/research/kronos_filter.py`: 100 paths ผ่าน `predict_batch` (เพราะ `predict()` เฉลี่ย sample ทิ้ง) → p_up, exp_ret, q10/q50/q90
+- `scripts/fetch_candles.py` แคช parquet ที่ `data/candles/` ให้ venv อื่นใช้; `config/universe.yaml` = หุ้นใหญ่ 30 ตัว + BTC/ETH (ใช้วิจัย ไม่ใช่ watchlist เทรด)
+- ความเร็ว (Mac M-series): lookback 400 → CPU 36s / MPS 22s ต่อ forecast; lookback 256 → MPS 11s / CPU 20s; RAM ~1.7GB → ใช้ lookback 256
+- `backtests/kronos_filter_backtest.py run|report`: out-of-sample เริ่ม 2025-09-01 (หลัง paper Kronos 2025-08 — ไม่รู้ cutoff ของ pre-train แน่ชัด), หุ้น 1d h=5 step 5, crypto 1d h=5 step 5 + 4h h=6 step 12, ประมาณ 2,360 forecasts ~7 ชม. → ผลที่ `backtests/kronos_20261029/`
+- สังเกตจาก smoke test (10 paths): BTC 1d ได้ p_up ≤ 0.30 ทุกจุด → อาจมี bias ขาลงจากการ normalize ต้องดู calibration ในผลจริงก่อนใช้เกณฑ์ 0.70
+
 **2026-10-29 — Deploy VPS ใหม่ + cron Phase 1 เริ่มรัน**
 - VPS ใหม่ (Vultr) Ubuntu 26.04, 2 vCPU AVX2, RAM 3.3G + swap 4.8G, disk ว่าง 36G, มีทั้ง IPv4 (ใช้กับ OKX whitelist) และ IPv6 — address ดูใน `~/.ssh/config` บน Mac (ไม่เก็บใน repo)
 - SSH จาก Mac: `ssh aifund` (root) / `ssh aifund-app` (user aifund ที่รันบอท) ใช้ key `~/.ssh/id_ed25519_aifund` แยกจาก PRS bot (ลบ key prs-bot ออกจาก VPS แล้ว)
