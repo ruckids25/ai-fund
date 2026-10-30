@@ -92,6 +92,12 @@ ai-fund/
 - 2026-10-28: แก้ RISK_RULES ข้อ 2 และ 7 (ยังไม่มี position เปิด) — เหตุผล: ทุน 15K THB + กฎ margin 20% ทำให้หุ้นแบบเงินสดเสี่ยงได้แค่ ~120 THB/เทรด และเปิด 3 ตัวไม่ได้ จึงแยกทุนหุ้นใน paper = $3,000 (ค่าเริ่มต้น ต้องเท่าทุนจริงที่พร้อมใส่), cap หุ้น 33%/ตัว, งบขาดทุน 15K ยังใช้ร่วมกัน, เพิ่มเกณฑ์ ≥30 เทรด/desk และต้องมีบัญชีหุ้นจริงก่อน go-live ฝั่งหุ้น
 
 ## สถานะล่าสุด
+**2026-10-30 — Phase 4: `risk_monitor.py` เขียนแล้ว (ลูป C) — รอผู้ใช้ตั้ง cron ทุก 5 นาที**
+- daily = แจ้งเตือน, soft = halt ค้าง, hard = halt + ปิดทุก position; แจ้งครั้งเดียวต่อเหตุการณ์ (ส่งไม่สำเร็จจะลองใหม่), อ่านบัญชีไม่ได้ 3 รอบติดแจ้งเตือน, ส่งสรุปวันละครั้งเพื่อยืนยันว่ายังทำงาน, บันทึก `daily_pnl` ทุกรอบ
+- ใช้ cron แทน systemd timer ตาม WORKFLOW เพื่อให้เหมือนงานอื่นบน VPS; ยังนับเฉพาะ PnL หุ้นจนกว่าจะมี freqtrade
+- ไม่ได้ตรวจว่าทุก position มี stop อยู่ที่ broker จริง → ควรเพิ่มเมื่อมี position จริงให้ดูรูปแบบข้อมูลของ Alpaca
+- ค้าง Phase 4: freqtrade + เลือก strategy crypto + OKX sub-account, lookahead-analysis, backup ledger, ทดสอบ kill switch
+
 **2026-10-30 — Phase 4: `fund.py` รันเองบน VPS (Alpaca paper) — ผู้ใช้ตั้ง cron แล้ว**
 - cron (UTC): `5 23 * * 1-5 scripts/cron_fund.sh` = 06:05 TH อ–ส, รันแรก 31 ต.ค. เช้า (TH), log ที่ `logs/fund_YYYYMM.log`; `envs/ta` บน VPS แล้ว (TradingAgents c454491, dependency ตรงกับ Mac)
 - `TG_TOKEN`, `TG_FT_TOKEN` และ Alpaca paper key หมุนใหม่แล้ว 2026-10-30 ทั้ง Mac + VPS, Telegram/Alpaca ทดสอบผ่านทั้งสองเครื่อง; บอทคือ @AI_Fund_Alerts_bot
