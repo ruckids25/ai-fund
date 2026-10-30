@@ -97,7 +97,8 @@ ai-fund/
 - PnL + จำนวน position ใน fund.py และ risk_monitor นับ crypto แล้ว; PnL รายวันฝั่ง crypto = realized วันนี้ + unrealized ตอนนี้ (ประมาณ)
 - ลองรันบน Mac ~2 นาที: RUNNING ไม่มี error, เขียน crypto_pnl ได้, backtest ผลเดิม (218 เทรด) — **ยังไม่เคยเห็น entry จริงผ่าน gate ใน dry-run** (A เทรด ~3.8 ครั้ง/เดือน)
 - service `ai-fund-freqtrade` รันบน VPS ตั้งแต่ 11:39 UTC (ผู้ใช้ติดตั้ง + ยืนยันว่า @AI_2trade_bot เป็นของ ai-fund), snapshot ไหลครบ
-- Kill switch: `fund.py --halt` ทดสอบผ่าน 2026-10-30 (ปฏิเสธทั้งหุ้นและ crypto, เคลียร์แล้ว); ค้างทดสอบ Telegram `/stopentry`, `/forceexit all` และปิด API key ด้วยมือ
+- Kill switch: `fund.py --halt` ทดสอบผ่าน 2026-10-30 (ปฏิเสธทั้งหุ้นและ crypto, เคลียร์แล้ว); Telegram `/stopentry` ผู้ใช้ทดสอบผ่าน (หลังใช้ต้องสั่ง `/reload_config` เท่านั้น `/start` ไม่คืน entry); ค้างทดสอบ `/forceexit all` เมื่อมีเทรด และปิด API key ด้วยมือ
+- `scripts/backup_ledger.py` รันมือบน VPS ผ่าน เก็บ 14 วันใน `data/backups/` (เครื่องเดียวกัน กันไฟล์เสียเท่านั้น); รอผู้ใช้ตั้ง cron 23:59 UTC
 - ห้ามนับ dry-run ของ A เป็น paper Phase 5 และห้าม live
 
 **2026-10-30 — Phase 4 crypto: strategy B (สวนกลับ 1h) ไม่ผ่านเช่นกัน**
