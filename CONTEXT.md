@@ -92,6 +92,16 @@ ai-fund/
 - 2026-10-28: แก้ RISK_RULES ข้อ 2 และ 7 (ยังไม่มี position เปิด) — เหตุผล: ทุน 15K THB + กฎ margin 20% ทำให้หุ้นแบบเงินสดเสี่ยงได้แค่ ~120 THB/เทรด และเปิด 3 ตัวไม่ได้ จึงแยกทุนหุ้นใน paper = $3,000 (ค่าเริ่มต้น ต้องเท่าทุนจริงที่พร้อมใส่), cap หุ้น 33%/ตัว, งบขาดทุน 15K ยังใช้ร่วมกัน, เพิ่มเกณฑ์ ≥30 เทรด/desk และต้องมีบัญชีหุ้นจริงก่อน go-live ฝั่งหุ้น
 
 ## สถานะล่าสุด
+**2026-10-30 — Phase 3: เปลี่ยน committee เป็น DeepSeek + กำลังรัน backtest grid 40 cell**
+- Gemini free tier ไม่พอ: gemini-3.8-flash ได้แค่ 20 requests/วัน → grid แรก (`backtests/ta_20261030_gemini/`) ได้ 5 cell (Overweight ทั้งหมด วันที่ 2026-08-31) ที่เหลือ 429 quota → เก็บไว้แยก ไม่ใช้สรุปผล
+- เปลี่ยน `config/committee.yaml` เป็น DeepSeek (เติมเงิน prepaid $20, key ใน `DEEPSEEK_API_KEY`): quick = deepseek-flash, deep = deepseek-v4-pro; ราคาใน yaml เป็นราคา peak cache-miss (upper bound) — off-peak ลดครึ่ง, peak = 13:00–16:00 และ 08:00–11:00 TH จ–ศ
+- Anthropic ยังเติมเครดิตไม่ได้ → ถ้ากลับไปใช้ Claude ต้องตั้ง `temperature: null` (Messages API ปฏิเสธ temperature ตั้งแต่ 2026-10-21)
+- `backtests/ta_committee_backtest.py run|report --out <dir>`: หุ้น NVDA/AAPL/MSFT/JPM/XOM × 8 วันจันทร์ 2026-08-31 → 10-19, วัด ret 5 sessions เทียบ buy-and-hold ทุก cell + ผล stop/target ใน 10 sessions; resume ได้จาก decisions.csv
+- grid DeepSeek เริ่ม ~10:50 TH ที่ `backtests/ta_20261030_deepseek/` (รันบน Mac ด้วย caffeinate) — 13:22 ได้ 16/40, ไม่มี error, ~8–10 นาที/cell, คาดเสร็จ ~17:00–17:30; ค่าจริงช่วงแรก ~$0.07/cell (cache + off-peak) → ทั้งชุดคาด ~$3–4
+- rating 16 cell แรก: Underweight 8, Overweight 6, Hold 2 — ไม่เอียงขาขึ้นแบบ Gemini
+- ข้อจำกัดที่รู้: LLM อาจรู้ราคาช่วงนี้จาก training data (cutoff ไม่แน่ชัด), Yahoo ให้ข่าวย้อนหลังน้อย, ไม่มี FRED key
+- **ถัดไป:** `report` → สรุปเทียบ buy-and-hold + ยอดใช้จริง → commit ผล → ตัดสินว่า committee มี edge พอไปต่อไหม; จากนั้น ลง `envs/ta` บน VPS, ส่ง Kronos (p_up/q10/q90) เข้า committee, เลือกเกณฑ์หุ้นเข้า committee (≤5/วัน), เทียบการแบ่งโมเดล
+
 **2026-10-30 — Phase 3 เริ่ม: TradingAgents committee ใช้ Gemini free tier (ยังไม่มีเครดิต Anthropic)**
 - `vendor/TradingAgents` v0.7.1 (c454491), `envs/ta` (Mac เท่านั้น ยังไม่ได้ลง VPS); key อยู่ใน `GOOGLE_API_KEY`
 - `config/committee.yaml`: quick = gemini-3.5-flash-lite, deep = gemini-3.8-flash (Pro ไม่อยู่ใน free tier), debate 1 รอบ

@@ -69,7 +69,7 @@
 - [x] venv `envs/ta` + `desks/committee/ta_committee.py` → output JSON มาตรฐาน: `{ticker, action, entry, stop, target, confidence, rationale, cost_usd}`
 - [x] วัดค่า API ต่อรอบจริง (token ทุก agent) → ลง `api_costs` (Gemini free tier: ~120K token/รอบ, 18 calls, ~3.5 นาที)
 - [ ] ทดลองแบ่งโมเดล: analyst ใช้ Haiku, debate/decision ใช้ Sonnet → เทียบคุณภาพ vs ค่าใช้จ่าย
-- [ ] backtest grid **เฉพาะช่วงหลัง knowledge cutoff ของโมเดล** (ดูข้อ 5.4)
+- [ ] backtest grid **เฉพาะช่วงหลัง knowledge cutoff ของโมเดล** (ดูข้อ 5.4) → กำลังรัน DeepSeek 5 หุ้น × 8 วัน (2026-08-31 → 10-19) ที่ `backtests/ta_20261030_deepseek/`
 
 **เกณฑ์ผ่าน:** รู้ $/รอบ, รู้ว่างบ $30/เดือน รันได้กี่ ticker/วันจริงๆ, มีผลเทียบกับ buy-and-hold
 
