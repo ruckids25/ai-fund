@@ -84,7 +84,7 @@
 - [x] Alpaca paper bracket order (`core/alpaca.py`)
 - [ ] freqtrade dry-run OKX: strategy แรก + เรียก risk_gate ใน callbacks (`custom_stake_amount`, `leverage`, `confirm_trade_entry`), `stoploss_on_exchange: true`, `margin_mode: isolated`
 - [x] `risk_monitor.py` (ลูป C) อ่าน PnL จาก Alpaca + freqtrade API → รวมเป็น THB → ตัดสินใจ halt (รวม crypto ผ่านไฟล์ snapshot แทน API)
-- [ ] Trade journal: Part A reconcile → ledger (โค้ดเสร็จ รอตรวจกับไม้จริง), Part B outcome labels + runs (โค้ดเสร็จ รอ cron), Part C Google Sheet (รอผู้ใช้ตั้ง Google)
+- [ ] Trade journal: Part A reconcile → ledger (โค้ดเสร็จ รอตรวจกับไม้จริง), Part B outcome labels + runs (โค้ดเสร็จ รอ cron), Part C Google Sheet (โค้ดเสร็จ รอตรวจ Sheet, cron และไม้จริง)
 - [ ] `lookahead-analysis` + `recursive-analysis` ของ freqtrade
 - [ ] รันด้วย systemd timer / docker-compose + restart อัตโนมัติ + backup ledger รายวัน
 

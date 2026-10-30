@@ -93,6 +93,13 @@ ai-fund/
 
 ## สถานะล่าสุด
 
+**2026-10-30 — Trade journal Part C: Google Sheet จาก ledger ทางเดียว (รอผู้ใช้ตรวจ Sheet และตั้ง cron)**
+- `scripts/sheet_sync.py` เขียนแท็บ Trades, Decisions, Daily, Runs, Summary ไม่แตะแท็บอื่น sync จริงบน VPS 2 รอบได้ค่าเหมือนกัน และ Sheet ID ผิดทำให้ wrapper จบด้วย exit 1
+- `daily_pnl` เพิ่ม `open_positions`, `halted` ที่ `risk_monitor` บันทึก เพื่อให้ Daily มาจาก ledger ล้วน
+- Daily: equity_usd/equity_thb รวมเงินตั้งต้น paper $100,000 ส่วน dist_to_* ใช้เพดานใน `config/risk.yaml` ปัจจุบัน
+- cron ที่ผู้ใช้ต้องตั้งเอง: `15 0 * * 2-6 /home/aifund/ai-fund/scripts/cron_sheet_sync.sh`
+- ยังไม่ได้ตรวจกับไม้จริง: Trades ยังว่างจนกว่าจะมีออเดอร์แรก `.env` บน Mac ยังไม่มี `GOOGLE_SA_JSON_PATH`, `JOURNAL_SHEET_ID` (sync จริงรันบน VPS)
+
 **2026-10-30 — Trade journal Part B: run metadata + outcome labels (รอผู้ใช้ตั้ง cron)**
 - ตาราง `runs` และ `decisions.run_id`: `fund.py` บันทึก git commit, `strategy_version`, โมเดล, sha ของ config, ต้นทุน API, ข้อผิดพลาด ทุกรอบ ถ้าบันทึกล้มเหลว การเทรดยังเดินต่อ
 - `config/committee.yaml` มี `strategy_version: stocks-ta-v1` เปลี่ยนโมเดล/prompt/กฎเมื่อไหร่ต้องเปลี่ยนเวอร์ชัน
