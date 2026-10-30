@@ -1,5 +1,6 @@
 {
   "dry_run": true,
+  "initial_state": "running",
   "dry_run_wallet": 445,
   "trading_mode": "futures",
   "margin_mode": "isolated",
