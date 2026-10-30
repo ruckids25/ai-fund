@@ -92,6 +92,10 @@ ai-fund/
 - 2026-10-28: แก้ RISK_RULES ข้อ 2 และ 7 (ยังไม่มี position เปิด) — เหตุผล: ทุน 15K THB + กฎ margin 20% ทำให้หุ้นแบบเงินสดเสี่ยงได้แค่ ~120 THB/เทรด และเปิด 3 ตัวไม่ได้ จึงแยกทุนหุ้นใน paper = $3,000 (ค่าเริ่มต้น ต้องเท่าทุนจริงที่พร้อมใส่), cap หุ้น 33%/ตัว, งบขาดทุน 15K ยังใช้ร่วมกัน, เพิ่มเกณฑ์ ≥30 เทรด/desk และต้องมีบัญชีหุ้นจริงก่อน go-live ฝั่งหุ้น
 
 ## สถานะล่าสุด
+**2026-10-30 — Phase 4 crypto: strategy B (สวนกลับ 1h) ไม่ผ่านเช่นกัน**
+- PF 0.67, DD 17,090 THB, ถึง hard stop ในการจำลอง — ดู `backtests/crypto_meanrev1h_20261030/conclusion.md`; ลองแล้ว 2 แบบ ตกลงไว้ว่าลองไม่เกินอีก 1 แบบ
+- สถานะรวม: ยังไม่มีสัญญาณใดพิสูจน์ได้ว่ามี edge ทั้งหุ้น (committee) และ crypto (A, B)
+
 **2026-10-30 — Phase 4 crypto: strategy A (ตามเทรนด์ 4h) ไม่ผ่าน → ยังไม่มี strategy crypto**
 - เกณฑ์กำหนดและ commit ก่อนเห็นผล; PF 0.87, ขาดทุนทั้งสองครึ่ง, DD 8,359 THB, 3.8 เทรด/เดือน — ดู `backtests/crypto_trend4h_20261030/conclusion.md`
 - `envs/freqtrade` (2026.10) บน Mac เท่านั้น, `crypto/freqtrade/user_data/{config.json,strategies/TrendEma4h.py}`; ขนาดไม้ + leverage อ่านจาก risk_gate; ยังไม่ได้เรียก `evaluate_order` ใน callback

@@ -7,6 +7,7 @@ from datetime import datetime, timedelta
 
 import talib.abstract as ta
 from freqtrade.persistence import Trade
+from freqtrade.exchange import timeframe_to_minutes
 from freqtrade.strategy import IStrategy, stoploss_from_absolute
 from pandas import DataFrame
 
@@ -52,7 +53,7 @@ class TrendEma4h(IStrategy):
     def _atr(self, pair: str, at: datetime) -> float:
         """ATR of the last candle fully closed at `at`, so size and stop use the same value."""
         df, _ = self.dp.get_analyzed_dataframe(pair, self.timeframe)
-        closed = df[df["date"] + timedelta(hours=4) <= at]
+        closed = df[df["date"] + timedelta(minutes=timeframe_to_minutes(self.timeframe)) <= at]
         return float(closed["atr"].iloc[-1])
 
     def leverage(self, pair: str, current_time: datetime, current_rate: float, proposed_leverage: float,
