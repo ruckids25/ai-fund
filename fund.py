@@ -37,9 +37,13 @@ def account_state(client, cfg: dict) -> tuple[AccountState, set[str]]:
     ), held
 
 
-def last_session(client, today: date) -> str:
-    days = client.calendar((today - timedelta(days=7)).isoformat(), today.isoformat())
-    return days[-1]["date"]
+def last_closed_session(client, clock: dict) -> tuple[str, str]:
+    """(latest session already closed, today in New York); broker clock and calendar are NY time."""
+    now = clock["timestamp"][:16]
+    ny_today = now[:10]
+    start = (date.fromisoformat(ny_today) - timedelta(days=7)).isoformat()
+    closed = [d["date"] for d in client.calendar(start, ny_today) if f"{d['date']}T{d['close']}" <= now]
+    return closed[-1], ny_today
 
 
 def cancel_stale_entries(client) -> list[str]:
@@ -71,8 +75,12 @@ def run(tickers: list[str] | None = None, *, dry: bool = False, client=None, com
     today = today or datetime.now(timezone.utc).date()
     lines = []
 
-    if client.clock()["is_open"] and not dry:
+    clock = client.clock()
+    if clock["is_open"] and not dry:
         return ["ตลาดเปิดอยู่: ไม่รัน (signal ต้องมาจากแท่งที่ปิดแล้ว)"]
+    day, ny_today = last_closed_session(client, clock)
+    if day != ny_today and not dry:     # holiday, or started before today's close
+        return [f"วันนี้ ({ny_today}) ไม่มี session ที่ปิดแล้ว: ไม่รัน"]
 
     state, held = account_state(client, cfg)
     limits = risk_gate.check_limits(state, cfg)
@@ -97,7 +105,6 @@ def run(tickers: list[str] | None = None, *, dry: bool = False, client=None, com
     if spent >= cfg["api"]["monthly_limit_usd"]:
         return lines + [f"ค่า API เดือนนี้ ${spent:.2f} ถึงเพดานแล้ว: ไม่รัน committee"]
 
-    day = last_session(client, today)
     wanted = [t for t in (tickers or watchlist()["stocks"]) if t not in held]
     for ticker in wanted[:cfg["api"]["max_committee_tickers_per_day"]]:
         try:
@@ -124,7 +131,11 @@ def run(tickers: list[str] | None = None, *, dry: bool = False, client=None, com
         if dry:
             lines.append(f"{ticker}: {dec.rating} → (dry) {plan}")
         else:
-            order = client.submit(order_payload(ticker, gate.qty, entry, stop, target, f"fund-{day}-{ticker}"))
+            try:
+                order = client.submit(order_payload(ticker, gate.qty, entry, stop, target, f"fund-{day}-{ticker}"))
+            except AlpacaError as e:     # e.g. duplicate client_order_id on a rerun
+                lines.append(f"{ticker}: ส่งออเดอร์ไม่สำเร็จ ({e})")
+                continue
             ledger.log_order("stocks", "alpaca_paper", ticker, "buy", gate.qty, stop=stop,
                              risk_thb=gate.risk_thb, entry=entry, target=target,
                              decision_id=decision_id, broker_id=order["id"])

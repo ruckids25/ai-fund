@@ -18,15 +18,22 @@ class FakeBroker:
         self._orders, self.is_open = list(orders), is_open
         self.submitted, self.cancelled, self.closed = [], [], False
 
-    def clock(self): return {"is_open": self.is_open}
+    now = "2026-10-29T19:00:00.000-04:00"   # after that day's close
+    submit_error = None
+
+    def clock(self): return {"is_open": self.is_open, "timestamp": self.now}
     def account(self): return {"equity": str(self.equity), "last_equity": str(self.last_equity)}
     def positions(self): return self._positions
     def open_orders(self): return self._orders
-    def calendar(self, start, end): return [{"date": "2026-10-28"}, {"date": "2026-10-29"}]
+    def calendar(self, start, end):
+        days = ["2026-10-28", "2026-10-29", "2026-10-30"]
+        return [{"date": d, "close": "16:00"} for d in days if d <= end]
     def cancel(self, oid): self.cancelled.append(oid)
     def close_all(self): self.closed = True
 
     def submit(self, payload):
+        if self.submit_error:
+            raise self.submit_error
         self.submitted.append(payload)
         return {"id": f"b{len(self.submitted)}"}
 
@@ -121,6 +128,22 @@ def test_committee_failure_does_not_stop_others(ledger, cfg):
     b = FakeBroker()
     lines = go(b, committee({"NVDA": ValueError("boom")}), ledger, cfg, tickers=("NVDA", "AAPL"))
     assert "ล้มเหลว" in lines[0] and [p["symbol"] for p in b.submitted] == ["AAPL"]
+
+
+def test_unclosed_session_is_not_used(ledger, cfg):
+    b, c = FakeBroker(), committee({"NVDA": buy(action="hold")})
+    b.now = "2026-10-30T06:00:00.000-04:00"       # morning before the 10-30 session
+    go(b, c, ledger, cfg, dry=True)
+    assert c.seen == [("NVDA", "2026-10-29")]
+    c2 = committee({})
+    assert "ไม่มี session" in go(b, c2, ledger, cfg)[0] and not c2.seen and not b.submitted
+
+
+def test_submit_failure_keeps_going_and_logs_no_order(ledger, cfg):
+    b = FakeBroker()
+    b.submit_error = AlpacaError("HTTP 422 duplicate")
+    lines = go(b, committee({}), ledger, cfg, tickers=("NVDA", "AAPL"))
+    assert len(lines) == 2 and "ไม่สำเร็จ" in lines[0] and not ledger.open_orders()
 
 
 def test_market_open_refuses(ledger, cfg):
