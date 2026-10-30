@@ -1,13 +1,14 @@
 # TradingAgents committee (desks/committee/ta_committee.py)
 version: 1
 
-# Gemini free tier while Anthropic credit is unavailable (2026-10-30).
-# Pro models are not in the free tier (RESOURCE_EXHAUSTED), so both tiers are Flash.
+# DeepSeek (paid, prepaid balance) since 2026-10-30 — Gemini free tier allows only
+# 20 deep-model requests/day, not enough for a grid. Previous Gemini config:
+#   provider google, quick gemini-3.5-flash-lite, deep gemini-3.8-flash
 llm:
-  provider: google
-  quick_model: gemini-3.5-flash-lite   # analysts, researchers, debaters, trader
-  deep_model: gemini-3.8-flash         # research manager, portfolio manager
-  max_retries: 8                       # free tier throttles (429) — ride it out
+  provider: deepseek
+  quick_model: deepseek-flash          # analysts, researchers, debaters, trader
+  deep_model: deepseek-v4-pro          # research manager, portfolio manager
+  max_retries: 8
   temperature: 0.2                     # set to null for Claude: the Messages API rejects temperature (400) since 2026-10-21
 
 debate:
@@ -15,8 +16,11 @@ debate:
   max_risk_discuss_rounds: 1
 
 # USD per 1M tokens, used for api_costs.cost_usd. 0 = free tier.
-# Fill in real prices before switching to a paid tier/provider.
+# DeepSeek peak rates, cache-miss input (api-docs.deepseek.com/quick_start/pricing, 2026-10-30);
+# off-peak is half, cache hits far cheaper — so recorded cost is an upper bound.
 prices:
+  deepseek-flash: {input: 0.30, output: 1.20}
+  deepseek-v4-pro: {input: 1.32, output: 3.96}
   gemini-3.5-flash-lite: {input: 0.0, output: 0.0}
   gemini-3.8-flash: {input: 0.0, output: 0.0}
 
