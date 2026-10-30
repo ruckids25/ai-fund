@@ -92,6 +92,13 @@ ai-fund/
 - 2026-10-28: แก้ RISK_RULES ข้อ 2 และ 7 (ยังไม่มี position เปิด) — เหตุผล: ทุน 15K THB + กฎ margin 20% ทำให้หุ้นแบบเงินสดเสี่ยงได้แค่ ~120 THB/เทรด และเปิด 3 ตัวไม่ได้ จึงแยกทุนหุ้นใน paper = $3,000 (ค่าเริ่มต้น ต้องเท่าทุนจริงที่พร้อมใส่), cap หุ้น 33%/ตัว, งบขาดทุน 15K ยังใช้ร่วมกัน, เพิ่มเกณฑ์ ≥30 เทรด/desk และต้องมีบัญชีหุ้นจริงก่อน go-live ฝั่งหุ้น
 
 ## สถานะล่าสุด
+**2026-10-30 — Phase 4: เชื่อม freqtrade dry-run กับ risk_gate + risk_monitor (A ใช้ทดสอบระบบเท่านั้น)**
+- ข้าม venv ด้วยไฟล์ snapshot `core/risk_state.py`: freqtrade เขียน `data/crypto_pnl.json` ทุกนาที, risk_monitor รวม PnL + เขียน `data/risk_state.json` ทุก 5 นาที; ก่อนทุก entry freqtrade เรียก `approve_crypto_entry` — snapshot หายหรือเกิน 15 นาที = ปฏิเสธ; hard stop ปิดฝั่ง crypto ผ่าน `custom_exit`
+- PnL + จำนวน position ใน fund.py และ risk_monitor นับ crypto แล้ว; PnL รายวันฝั่ง crypto = realized วันนี้ + unrealized ตอนนี้ (ประมาณ)
+- ลองรันบน Mac ~2 นาที: RUNNING ไม่มี error, เขียน crypto_pnl ได้, backtest ผลเดิม (218 เทรด) — **ยังไม่เคยเห็น entry จริงผ่าน gate ใน dry-run** (A เทรด ~3.8 ครั้ง/เดือน)
+- `envs/freqtrade` บน VPS แล้ว; service ยังไม่เริ่ม รอยืนยันว่า `TG_FT_TOKEN` (@AI_2trade_bot) ไม่ใช่ของ PRS และให้ผู้ใช้ติดตั้ง `scripts/ai-fund-freqtrade.service`
+- ห้ามนับ dry-run ของ A เป็น paper Phase 5 และห้าม live
+
 **2026-10-30 — Phase 4 crypto: strategy B (สวนกลับ 1h) ไม่ผ่านเช่นกัน**
 - PF 0.67, DD 17,090 THB, ถึง hard stop ในการจำลอง — ดู `backtests/crypto_meanrev1h_20261030/conclusion.md`; ลองแล้ว 2 แบบ ตกลงไว้ว่าลองไม่เกินอีก 1 แบบ
 - สถานะรวม: ยังไม่มีสัญญาณใดพิสูจน์ได้ว่ามี edge ทั้งหุ้น (committee) และ crypto (A, B)
