@@ -52,7 +52,7 @@ def test_entry_rejected_when_risk_state_stale(cfg, isolated, monkeypatch):
     publish()
     monkeypatch.setattr(risk_state, "is_stale", lambda s, now=None: True)
     d = risk_state.approve_crypto_entry("buy", 100, 90, 5, 0.5, cfg)
-    assert not d.approved and "stale" in d.reasons[0]
+    assert not d.approved and "risk_monitor" in d.reasons[0]
 
 
 def test_entry_approved_long_and_short(cfg):
@@ -64,7 +64,7 @@ def test_entry_approved_long_and_short(cfg):
 def test_entry_rejected_when_amount_exceeds_approved_size(cfg):
     publish()
     d = risk_state.approve_crypto_entry("buy", 100, 90, 5, 1.2, cfg)
-    assert not d.approved and "exceeds" in d.reasons[0]
+    assert not d.approved and "เกินที่อนุมัติ" in d.reasons[0]
 
 
 @pytest.mark.parametrize("kw", [dict(total_pnl_thb=-7500), dict(daily_pnl_thb=-600), dict(open_positions=3)])

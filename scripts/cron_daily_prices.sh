@@ -12,5 +12,5 @@ LOG="logs/daily_prices_$(date -u +%Y%m).log"
   echo "exit=$rc"
 } >>"$LOG" 2>&1
 if [ "${rc:-1}" -ne 0 ]; then
-  .venv/bin/python -m core.notify "⚠️ ai-fund: daily_prices exit=$rc — ดู $LOG บน VPS" >>"$LOG" 2>&1
+  .venv/bin/python -m core.notify "⚠️ ai-fund: รายงานราคาปิดล้มเหลว (รหัส $rc) — ดู $LOG บน VPS" >>"$LOG" 2>&1
 fi

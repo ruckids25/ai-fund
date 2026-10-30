@@ -55,10 +55,10 @@ def approve_crypto_entry(side: str, entry: float, stop: float, leverage: float, 
     """The risk gate for one freqtrade entry, using the state risk_monitor last published."""
     snap = read_snapshot("risk_state.json")
     if snap is None or is_stale(snap):
-        return GateDecision(False, reasons=["risk state missing or stale: is risk_monitor running?"])
+        return GateDecision(False, reasons=["ไม่มีสถานะความเสี่ยงล่าสุด: risk_monitor อาจไม่ทำงาน"])
     state = AccountState(snap["total_pnl_thb"], snap["daily_pnl_thb"], snap["open_positions"],
                          snap.get("stocks_open_value_usd", 0.0))
     gate = evaluate_order("crypto", side, entry, stop, state, leverage=leverage, cfg=cfg)
     if gate.approved and amount > gate.qty * 1.02:   # 2%: freqtrade rounds to its own contract size
-        return GateDecision(False, reasons=[f"amount {amount} exceeds approved {gate.qty}"])
+        return GateDecision(False, reasons=[f"จำนวน {amount} เกินที่อนุมัติ {gate.qty}"])
     return gate

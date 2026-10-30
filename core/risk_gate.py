@@ -74,13 +74,13 @@ def check_limits(state: AccountState, cfg: dict | None = None) -> LimitCheck:
     cfg = cfg or risk_config()
     budget = cfg["loss_budget"]
     if state.total_pnl_thb <= budget["hard_stop"]:
-        return LimitCheck("hard", f"hard stop: total PnL {state.total_pnl_thb:.0f} THB")
+        return LimitCheck("hard", f"ถึงเพดานขาดทุนรวม (hard stop): {state.total_pnl_thb:,.0f} บาท")
     if state.total_pnl_thb <= budget["soft_stop"]:
-        return LimitCheck("soft", f"soft stop: total PnL {state.total_pnl_thb:.0f} THB")
+        return LimitCheck("soft", f"ถึงเพดานเตือน (soft stop): ขาดทุนรวม {state.total_pnl_thb:,.0f} บาท")
     if state.daily_pnl_thb <= budget["daily_stop"]:
-        return LimitCheck("daily", f"daily stop: today {state.daily_pnl_thb:.0f} THB")
+        return LimitCheck("daily", f"ถึงเพดานรายวัน (daily stop): วันนี้ {state.daily_pnl_thb:,.0f} บาท")
     if state.open_positions >= cfg["positions"]["max_open_total"]:
-        return LimitCheck("max_positions", f"{state.open_positions} positions already open")
+        return LimitCheck("max_positions", f"เปิดอยู่ครบแล้ว {state.open_positions} ตัว")
     return LimitCheck("ok")
 
 
@@ -105,22 +105,22 @@ def _floor(qty: float, step: float) -> float:
 
 def _valid_inputs(side: str, entry, stop, fx) -> str | None:
     if side not in ("buy", "sell"):
-        return f"unknown side {side!r}"
+        return f"ไม่รู้จักฝั่ง {side!r}"
     if stop is None:
-        return "no stop"          # RISK_RULES 3
+        return "ไม่มีจุดตัดขาดทุน"          # RISK_RULES 3
     if not all(isinstance(v, (int, float)) and math.isfinite(v) and v > 0 for v in (entry, stop, fx)):
-        return "entry, stop and fx must be positive numbers"
+        return "ราคาเข้า จุดตัดขาดทุน และอัตราแลกเปลี่ยนต้องเป็นตัวเลขบวก"
     if (side == "buy" and stop >= entry) or (side == "sell" and stop <= entry):
-        return "stop on the wrong side of entry"
+        return "จุดตัดขาดทุนอยู่ผิดฝั่งของราคาเข้า"
     return None
 
 
 def _size_stocks(side, entry, stop, leverage, state, fx, cfg) -> tuple[float, str | None]:
     desk = cfg["desks"]["stocks"]
     if side != "buy":
-        return 0.0, "stocks are cash only: no shorts"
+        return 0.0, "หุ้นใช้เงินสดเท่านั้น: short ไม่ได้"
     if leverage != 1:
-        return 0.0, "stocks are cash only: no leverage"
+        return 0.0, "หุ้นใช้เงินสดเท่านั้น: ใช้ leverage ไม่ได้"
     max_value = desk["capital_usd"] * desk["max_position_pct"]
     remaining = desk["capital_usd"] * desk["max_total_pct"] - state.stocks_open_value_usd
     qty = min(size_position(entry, stop, fx, cfg), max_value / entry, remaining / entry)
@@ -130,11 +130,11 @@ def _size_stocks(side, entry, stop, leverage, state, fx, cfg) -> tuple[float, st
 def _size_crypto(entry, stop, leverage, qty_step, fx, cfg) -> tuple[float, str | None]:
     desk = cfg["desks"]["crypto"]
     if desk["margin_mode"] != "isolated":
-        return 0.0, "crypto requires isolated margin"
+        return 0.0, "crypto ต้องใช้ isolated margin"
     if not 1 <= leverage <= desk["max_leverage"]:
-        return 0.0, f"leverage {leverage} outside 1-{desk['max_leverage']}"
+        return 0.0, f"leverage {leverage} อยู่นอกช่วง 1-{desk['max_leverage']}"
     if not check_liquidation(entry, stop, leverage, cfg):
-        return 0.0, f"liquidation too close to stop at {leverage}x"
+        return 0.0, f"ราคา liquidation ใกล้จุดตัดขาดทุนเกินไปที่ {leverage}x"
     max_margin_usd = desk["capital_thb"] * desk["max_margin_pct"] / fx
     qty = min(size_position(entry, stop, fx, cfg), max_margin_usd * leverage / entry)
     return _floor(qty, qty_step), None
@@ -154,11 +154,11 @@ def evaluate_order(desk: str, side: str, entry: float, stop: float, state: Accou
         return GateDecision(False, leverage=leverage, reasons=[reason], close_all=close_all)
 
     if is_halted():
-        return reject(limits.reason or "halt flag set")
+        return reject(limits.reason or "สั่งหยุดระบบไว้")
     if not limits.ok:
         return reject(limits.reason)
     if desk not in ("stocks", "crypto"):
-        return reject(f"unknown desk {desk!r}")
+        return reject(f"ไม่รู้จัก desk {desk!r}")
     fx = cfg["fx"]["usdthb"]
     bad = _valid_inputs(side, entry, stop, fx)
     if bad:
@@ -171,5 +171,5 @@ def evaluate_order(desk: str, side: str, entry: float, stop: float, state: Accou
     if bad:
         return reject(bad)
     if qty <= 0:
-        return reject("size rounds to zero under the caps")
+        return reject("ขนาดไม้ไม่ถึงหน่วยขั้นต่ำภายใต้เพดานความเสี่ยง")
     return GateDecision(True, qty=qty, risk_thb=round(qty * abs(entry - stop) * fx, 2), leverage=leverage)

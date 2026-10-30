@@ -22,6 +22,8 @@ from core.ledger import Ledger
 from core.risk_gate import AccountState
 
 log = logging.getLogger("fund")
+RATING_TH = {"Buy": "ซื้อ", "Overweight": "เพิ่มน้ำหนัก (ซื้อ)", "Hold": "ถือ",
+             "Underweight": "ลดน้ำหนัก (ขาย)", "Sell": "ขาย", "REVIEW": "ต้องตรวจเอง"}
 
 
 def account_state(client, cfg: dict) -> tuple[AccountState, set[str]]:
@@ -91,16 +93,16 @@ def run(tickers: list[str] | None = None, *, dry: bool = False, client=None, com
     if limits.level == "hard":
         if not dry:
             client.close_all()
-        return [f"🛑 {limits.reason}: " + ("(dry) ไม่ได้ปิด position" if dry else "ปิดทุก position แล้ว")]
+        return [f"🛑 {limits.reason}: " + ("(ทดลอง) ไม่ได้ปิดสถานะ" if dry else "ปิดทุกสถานะแล้ว")]
     if risk_gate.is_halted():
-        return [f"⏸ halted: {limits.reason or 'halt flag set'} — ไม่เปิดออเดอร์"]
+        return [f"⏸ ระบบหยุดอยู่: {limits.reason or 'สั่งหยุดระบบไว้'} — ไม่เปิดออเดอร์"]
     if not limits.ok:
         return [f"⏸ {limits.reason} — ไม่เปิดออเดอร์"]
 
     if not dry:
         stale = cancel_stale_entries(client)
         if stale:
-            lines.append("ยกเลิก entry ค้าง: " + ", ".join(stale))
+            lines.append("ยกเลิกออเดอร์ซื้อที่ค้าง: " + ", ".join(stale))
 
     month_start = today.replace(day=1).isoformat()
     spent = ledger.api_cost_usd(month_start)
@@ -115,8 +117,9 @@ def run(tickers: list[str] | None = None, *, dry: bool = False, client=None, com
             log.exception("committee %s", ticker)
             lines.append(f"{ticker}: committee ล้มเหลว ({type(e).__name__})")
             continue
+        rating = RATING_TH.get(dec.rating, dec.rating)
         if dec.action != "buy":
-            lines.append(f"{ticker}: {dec.rating} → ไม่เปิด")
+            lines.append(f"{ticker}: {rating} → ไม่เปิด")
             continue
 
         entry, stop, target = _round(dec.entry), _round(dec.stop), _round(dec.target)
@@ -126,12 +129,12 @@ def run(tickers: list[str] | None = None, *, dry: bool = False, client=None, com
             stop=stop, target=target, reason="; ".join(gate.reasons) or None,
             payload={"qty": gate.qty, "risk_thb": gate.risk_thb})
         if not gate.approved:
-            lines.append(f"{ticker}: {dec.rating} → gate ปฏิเสธ: {'; '.join(gate.reasons)}")
+            lines.append(f"{ticker}: {rating} → ด่านความเสี่ยงปฏิเสธ: {'; '.join(gate.reasons)}")
             continue
 
-        plan = f"{gate.qty:.0f} หุ้น @ {entry} stop {stop} target {target} เสี่ยง {gate.risk_thb:.0f} บาท"
+        plan = f"{gate.qty:.0f} หุ้น ที่ {entry} จุดตัดขาดทุน {stop} เป้า {target} เสี่ยง {gate.risk_thb:.0f} บาท"
         if dry:
-            lines.append(f"{ticker}: {dec.rating} → (dry) {plan}")
+            lines.append(f"{ticker}: {rating} → (ทดลอง) {plan}")
         else:
             try:
                 order = client.submit(order_payload(ticker, gate.qty, entry, stop, target, f"fund-{day}-{ticker}"))
@@ -141,7 +144,7 @@ def run(tickers: list[str] | None = None, *, dry: bool = False, client=None, com
             ledger.log_order("stocks", "alpaca_paper", ticker, "buy", gate.qty, stop=stop,
                              risk_thb=gate.risk_thb, entry=entry, target=target,
                              decision_id=decision_id, broker_id=order["id"])
-            lines.append(f"{ticker}: {dec.rating} → ส่งแล้ว {plan}")
+            lines.append(f"{ticker}: {rating} → ส่งออเดอร์แล้ว {plan}")
         state = AccountState(state.total_pnl_thb, state.daily_pnl_thb, state.open_positions + 1,
                              state.stocks_open_value_usd + gate.qty * entry)
     return lines or ["ไม่มีตัวให้พิจารณา"]
@@ -157,13 +160,13 @@ def main() -> int:
 
     if args.halt:
         risk_gate.set_halt(args.halt)
-        notify.send(f"⏸ ai-fund halted: {args.halt}")
+        notify.send(f"⏸ ai-fund สั่งหยุดระบบแล้ว: {args.halt}")
         return 0
     try:
         lines, rc = run(args.tickers, dry=args.dry), 0
     except AlpacaError as e:
         lines, rc = [f"⚠️ Alpaca: {e}"], 1
-    msg = f"ai-fund · fund.py{' --dry' if args.dry else ''}\n" + "\n".join(lines)
+    msg = f"ai-fund · รอบวิเคราะห์หุ้น{' (ทดลอง)' if args.dry else ''}\n" + "\n".join(lines)
     print(msg)
     if not args.dry:
         notify.send(msg)

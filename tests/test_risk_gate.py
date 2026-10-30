@@ -92,7 +92,7 @@ def test_stocks_capped_by_remaining_capital(cfg):
 
 def test_stocks_too_expensive_for_one_share_is_rejected(cfg):
     d = rg.evaluate_order("stocks", "buy", 1200, 1190, CLEAN, cfg=cfg)
-    assert not d.approved and "zero" in d.reasons[0]
+    assert not d.approved and "ขั้นต่ำ" in d.reasons[0]
 
 
 def test_stocks_no_short_no_leverage(cfg):
@@ -179,4 +179,4 @@ def test_manual_halt_blocks_and_records_reason(cfg, halt_flag):
     rg.set_halt("fund.py --halt")
     assert rg.is_halted() and "fund.py --halt" in halt_flag.read_text()
     d = rg.evaluate_order("stocks", "buy", 100, 95, CLEAN, cfg=cfg)
-    assert not d.approved and d.reasons == ["halt flag set"]
+    assert not d.approved and d.reasons == ["สั่งหยุดระบบไว้"]

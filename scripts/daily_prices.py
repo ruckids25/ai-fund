@@ -27,20 +27,20 @@ def _line(sym: str, df) -> str:
 
 def build_message() -> tuple[str, int]:
     wl, lines, errors = watchlist(), [], 0
-    lines.append("📈 Stocks (ปิดล่าสุด)")
+    lines.append("📈 หุ้น (ราคาปิดล่าสุด)")
     for t in wl["stocks"]:
         try:
             lines.append(_line(t, data.get_stock_daily(t, 5)))
         except Exception as e:  # report and keep going
             errors += 1
-            lines.append(f"{t:<14} ERROR {type(e).__name__}")
-    lines.append("\n🪙 Crypto (แท่ง 1d ปิดล่าสุด, OKX perp)")
+            lines.append(f"{t:<14} ดึงข้อมูลไม่ได้ ({type(e).__name__})")
+    lines.append("\n🪙 คริปโต (แท่งรายวันที่ปิดล่าสุด, OKX perp)")
     for s in wl["crypto"]:
         try:
             lines.append(_line(s, data.get_crypto_ohlcv(s, "1d", 5)))
         except Exception as e:
             errors += 1
-            lines.append(f"{s:<14} ERROR {type(e).__name__}")
+            lines.append(f"{s:<14} ดึงข้อมูลไม่ได้ ({type(e).__name__})")
     stamp = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
     return f"ai-fund · ราคาปิด · {stamp}\n\n" + "\n".join(lines), errors
 

@@ -93,7 +93,7 @@ def test_dry_sends_nothing(ledger, cfg):
     stale = {"id": "x", "symbol": "AAPL", "side": "buy", "filled_qty": "0", "client_order_id": "fund-old"}
     b = FakeBroker(orders=[stale])
     lines = go(b, committee({}), ledger, cfg, dry=True)
-    assert not b.submitted and not b.cancelled and "(dry)" in lines[0]
+    assert not b.submitted and not b.cancelled and "(ทดลอง)" in lines[0]
     assert not ledger.open_orders()
 
 
@@ -101,7 +101,7 @@ def test_dry_sends_nothing(ledger, cfg):
 def test_gate_rejection_never_reaches_broker(ledger, cfg, dec):
     b = FakeBroker()
     lines = go(b, committee({"NVDA": dec}), ledger, cfg)
-    assert not b.submitted and "gate" in lines[0]
+    assert not b.submitted and "ด่านความเสี่ยงปฏิเสธ" in lines[0]
 
 
 @pytest.mark.parametrize("rating,action", [("Hold", "hold"), ("Underweight", "sell"), ("REVIEW", "review")])
@@ -115,7 +115,7 @@ def test_new_orders_count_towards_max_positions(ledger, cfg):
     b = FakeBroker(positions=[{"symbol": "XOM", "market_value": "100"}])
     lines = go(b, committee({}), ledger, cfg, tickers=("NVDA", "AAPL", "MSFT"))
     assert [p["symbol"] for p in b.submitted] == ["NVDA", "AAPL"]
-    assert "gate" in lines[2]
+    assert "ด่านความเสี่ยงปฏิเสธ" in lines[2]
 
 
 def test_held_ticker_skipped_and_ticker_cap(ledger, cfg):
@@ -156,7 +156,7 @@ def test_market_open_refuses(ledger, cfg):
 def test_halt_flag_blocks_before_spending_on_committee(ledger, cfg):
     risk_gate.set_halt("manual")
     b, c = FakeBroker(), committee({})
-    assert "halted" in go(b, c, ledger, cfg)[0]
+    assert "หยุดอยู่" in go(b, c, ledger, cfg)[0]
     assert not c.seen and not b.submitted
 
 

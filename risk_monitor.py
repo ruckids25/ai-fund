@@ -52,20 +52,20 @@ def check(client, cfg: dict, ledger, seen: dict, *, dry: bool, today: str) -> tu
     crypto = risk_state.read_snapshot("crypto_pnl.json")
     crypto_stale = bool(crypto and risk_state.is_stale(crypto))
     if crypto_stale and not seen.get("crypto_stale"):
-        alerts.append("⚠️ ai-fund: freqtrade ไม่อัปเดต PnL เกิน 15 นาที — ใช้ตัวเลขล่าสุดที่มี ตรวจ service บน VPS")
+        alerts.append("⚠️ ai-fund: freqtrade ไม่อัปเดตกำไร/ขาดทุนเกิน 15 นาที — ใช้ตัวเลขล่าสุดที่มี ตรวจ service บน VPS")
     if not dry:
         risk_state.write_snapshot("risk_state.json", {
             "level": level, "total_pnl_thb": state.total_pnl_thb, "daily_pnl_thb": state.daily_pnl_thb,
             "open_positions": state.open_positions, "stocks_open_value_usd": state.stocks_open_value_usd})
     if level != "ok" and (level != seen.get("level") or (level == "daily" and seen.get("level_date") != today)):
-        action = {"daily": "ไม่เปิดเทรดใหม่จนถึงวันถัดไป (UTC)", "soft": "halt แล้ว ต้องทบทวนก่อนเปิดใหม่",
-                  "hard": "halt และปิดทุก position แล้ว"}[level]
+        action = {"daily": "ไม่เปิดเทรดใหม่จนถึงวันถัดไป (UTC)", "soft": "หยุดระบบแล้ว ต้องทบทวนก่อนเปิดใหม่",
+                  "hard": "หยุดระบบและปิดทุกสถานะแล้ว"}[level]
         alerts.append(f"🛑 ai-fund: {limits.reason} — {action}")
 
     if seen.get("heartbeat") != today:
-        alerts.append(f"ai-fund risk_monitor ทำงานปกติ · PnL รวม {state.total_pnl_thb:+,.0f} บาท "
+        alerts.append(f"ai-fund ระบบเฝ้าความเสี่ยงทำงานปกติ · กำไร/ขาดทุนรวม {state.total_pnl_thb:+,.0f} บาท "
                       f"· วันนี้ {state.daily_pnl_thb:+,.0f} บาท · เปิดอยู่ {state.open_positions} ตัว"
-                      f"{' · HALTED' if risk_gate.is_halted() else ''}")
+                      f"{' · ระบบหยุดอยู่' if risk_gate.is_halted() else ''}")
 
     if not dry:
         acct = client.account()
@@ -99,7 +99,7 @@ def main() -> int:
         rc = 1
         failures = seen.get("failures", 0) + 1
         new = {**seen, "failures": failures}
-        alerts = [f"⚠️ ai-fund risk_monitor อ่านบัญชีไม่ได้ {failures} รอบติด: {e}"] if failures == FAILURES_BEFORE_ALERT else []
+        alerts = [f"⚠️ ai-fund ระบบเฝ้าความเสี่ยงอ่านบัญชีไม่ได้ {failures} รอบติด: {e}"] if failures == FAILURES_BEFORE_ALERT else []
 
     if args.dry:
         print("\n".join(alerts) or "ไม่มีอะไรต้องแจ้ง")
