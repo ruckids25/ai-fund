@@ -1,0 +1,29 @@
+# TradingAgents committee (desks/committee/ta_committee.py)
+version: 1
+
+# Gemini free tier while Anthropic credit is unavailable (2026-10-30).
+# Pro models are not in the free tier (RESOURCE_EXHAUSTED), so both tiers are Flash.
+llm:
+  provider: google
+  quick_model: gemini-3.5-flash-lite   # analysts, researchers, debaters, trader
+  deep_model: gemini-3.8-flash         # research manager, portfolio manager
+  max_retries: 8                       # free tier throttles (429) — ride it out
+  temperature: 0.2                     # set to null for Claude: the Messages API rejects temperature (400) since 2026-10-21
+
+debate:
+  max_debate_rounds: 1
+  max_risk_discuss_rounds: 1
+
+# USD per 1M tokens, used for api_costs.cost_usd. 0 = free tier.
+# Fill in real prices before switching to a paid tier/provider.
+prices:
+  gemini-3.5-flash-lite: {input: 0.0, output: 0.0}
+  gemini-3.8-flash: {input: 0.0, output: 0.0}
+
+# PortfolioManager 5-tier rating → our action + confidence (heuristic, not calibrated)
+rating_map:
+  Buy:         {action: buy,  confidence: 0.8}
+  Overweight:  {action: buy,  confidence: 0.6}
+  Hold:        {action: hold, confidence: 0.5}
+  Underweight: {action: sell, confidence: 0.6}
+  Sell:        {action: sell, confidence: 0.8}

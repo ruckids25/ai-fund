@@ -92,6 +92,14 @@ ai-fund/
 - 2026-10-28: แก้ RISK_RULES ข้อ 2 และ 7 (ยังไม่มี position เปิด) — เหตุผล: ทุน 15K THB + กฎ margin 20% ทำให้หุ้นแบบเงินสดเสี่ยงได้แค่ ~120 THB/เทรด และเปิด 3 ตัวไม่ได้ จึงแยกทุนหุ้นใน paper = $3,000 (ค่าเริ่มต้น ต้องเท่าทุนจริงที่พร้อมใส่), cap หุ้น 33%/ตัว, งบขาดทุน 15K ยังใช้ร่วมกัน, เพิ่มเกณฑ์ ≥30 เทรด/desk และต้องมีบัญชีหุ้นจริงก่อน go-live ฝั่งหุ้น
 
 ## สถานะล่าสุด
+**2026-10-30 — Phase 3 เริ่ม: TradingAgents committee ใช้ Gemini free tier (ยังไม่มีเครดิต Anthropic)**
+- `vendor/TradingAgents` v0.7.1 (c454491), `envs/ta` (Mac เท่านั้น ยังไม่ได้ลง VPS); key อยู่ใน `GOOGLE_API_KEY`
+- `config/committee.yaml`: quick = gemini-3.5-flash-lite, deep = gemini-3.8-flash (Pro ไม่อยู่ใน free tier), debate 1 รอบ
+- `desks/committee/ta_committee.py`: คืน `{ticker, action, entry, stop, target, confidence, rationale, cost_usd}` + rating/tokens; บันทึก token ต่อโมเดลลง `api_costs`, decision ลง `decisions` (stage=committee); confidence มาจาก rating แบบกำหนดเอง ไม่ได้ calibrate
+- ทดสอบ NVDA 2026-10-29: Overweight → buy, entry 215.38 / stop 198 / target 240, 211 วินาที, quick 105K in + 9K out (16 calls), deep 4.6K in + 2.2K out (2 calls)
+- ประมาณค่า Claude จาก token เดียวกัน (โทเคนไนเซอร์ต่างกัน ตัวเลขหยาบ): Haiku 5.5 + Sonnet 5.5 ≈ $0.05/รอบ, Sonnet ทั้งหมด ≈ $0.33/รอบ
+- ไม่มี FRED_API_KEY → ข้อมูล macro ถูกข้าม (optional); Kronos ยังไม่ได้ส่งเข้า committee
+
 **2026-10-30 — Phase 2 จบ: Kronos ไม่ผ่านเกณฑ์ด่านกรอง → ใช้เป็นข้อมูลให้ committee**
 - walk-forward 2,332 forecasts (หุ้น 30 ตัว 1d, BTC/ETH 1d+4h) 2025-09 → 2026-10: `p_up ≥ 0.70` hit rate ไม่ต่างจาก base อย่างมีนัย (หุ้น 53.9% vs 52.4%), calibration แบน, IC ≈ 0 — รายละเอียด `backtests/kronos_20261029/conclusion.md`
 - ผลต่อ pipeline: Phase 3 ไม่ใช้ Kronos ตัดหุ้นทิ้ง; ส่ง p_up/q10/q90 ให้ TradingAgents เป็น context และเลือกหุ้นเข้า committee ด้วยเกณฑ์อื่น (ภายใต้เพดาน 5 ตัว/วัน)

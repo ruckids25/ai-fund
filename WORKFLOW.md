@@ -66,8 +66,8 @@
 **ถ้าไม่ผ่าน:** ใช้ Kronos เป็นแค่ feature/ข้อมูลให้ committee แทนการเป็นด่านกรอง
 
 ### Phase 3 — TradingAgents (สัปดาห์ 3–4)
-- [ ] venv `envs/ta` + `desks/committee/ta_committee.py` → output JSON มาตรฐาน: `{ticker, action, entry, stop, target, confidence, rationale, cost_usd}`
-- [ ] วัดค่า API ต่อรอบจริง (token ทุก agent) → ลง `api_costs`
+- [x] venv `envs/ta` + `desks/committee/ta_committee.py` → output JSON มาตรฐาน: `{ticker, action, entry, stop, target, confidence, rationale, cost_usd}`
+- [x] วัดค่า API ต่อรอบจริง (token ทุก agent) → ลง `api_costs` (Gemini free tier: ~120K token/รอบ, 18 calls, ~3.5 นาที)
 - [ ] ทดลองแบ่งโมเดล: analyst ใช้ Haiku, debate/decision ใช้ Sonnet → เทียบคุณภาพ vs ค่าใช้จ่าย
 - [ ] backtest grid **เฉพาะช่วงหลัง knowledge cutoff ของโมเดล** (ดูข้อ 5.4)
 
