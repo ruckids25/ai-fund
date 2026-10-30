@@ -92,6 +92,15 @@ ai-fund/
 - 2026-10-28: แก้ RISK_RULES ข้อ 2 และ 7 (ยังไม่มี position เปิด) — เหตุผล: ทุน 15K THB + กฎ margin 20% ทำให้หุ้นแบบเงินสดเสี่ยงได้แค่ ~120 THB/เทรด และเปิด 3 ตัวไม่ได้ จึงแยกทุนหุ้นใน paper = $3,000 (ค่าเริ่มต้น ต้องเท่าทุนจริงที่พร้อมใส่), cap หุ้น 33%/ตัว, งบขาดทุน 15K ยังใช้ร่วมกัน, เพิ่มเกณฑ์ ≥30 เทรด/desk และต้องมีบัญชีหุ้นจริงก่อน go-live ฝั่งหุ้น
 
 ## สถานะล่าสุด
+**2026-10-30 — Phase 4: `fund.py` + Alpaca paper (ยังไม่ได้ตั้ง schedule)**
+- `core/alpaca.py`: stdlib, URL fix ที่ paper; entry = limit GTC + stop ที่ broker เพราะขา stop ของ bracket แบบ DAY หมดอายุตอนตลาดปิด; fund.py ยกเลิก entry ที่ค้างในรอบถัดไป
+- `fund.py`: ปฏิเสธถ้าตลาดเปิด, อ่านบัญชีไม่ได้ = หยุด, เช็ก limits ก่อนจ่ายค่า LLM, ข้ามตัวที่ถืออยู่, ≤5 ตัว/วัน, หยุด committee เมื่อค่า API ถึงเพดาน, ออเดอร์ใหม่นับรวมเพดาน 3 ตัว; committee "sell" ไม่เปิดอะไร (long-only)
+- ทดสอบ: bracket NVDA ไกลตลาด (limit $5) Alpaca paper รับ แล้วยกเลิกทันที ไม่มี position ค้าง
+- **ข้อจำกัด:** บัญชี paper มี equity $100,000 ไม่ใช่ $3,000 ตาม RISK_RULES → ตั้ง `paper_baseline_usd: 100000` และ gate คุมขนาดด้วย capital_usd ถ้า reset บัญชีต้องแก้ค่านี้; PnL ยังนับเฉพาะหุ้น (รอ risk_monitor รวม crypto)
+- fx.usdthb ตรวจแล้ว 33.7 (Yahoo 2026-10-30) ไม่มี position เปิด
+- `.env` ทั้ง Mac และ VPS แก้ล่าสุด 10:57 ของวันนี้ — **ยังไม่ยืนยันว่า Telegram/Alpaca key ที่ใช้อยู่เป็นชุดที่หมุนใหม่แล้ว**
+- ค้าง Phase 4: ลง envs/ta บน VPS + schedule, freqtrade dry-run, risk_monitor, lookahead-analysis, backup ledger
+
 **2026-10-30 — Phase 4 เริ่ม: `core/risk_gate.py` เสร็จ (ยังไม่มีการส่งออเดอร์)**
 - ตัดสินใจทำ Phase 4 ก่อนทดสอบ committee เพิ่ม; committee ใช้ใน paper เท่านั้น ยังไม่มีหลักฐาน edge พอสำหรับเงินจริง
 - `evaluate_order()` คือทางเข้าเดียวของทุกออเดอร์: ตรวจ halt/limits/stop แล้วคำนวณ size; ข้อมูลผิดหรือไม่มี stop = reject; soft/hard stop เขียน halt flag ค้างไว้จนคนเคลียร์ (PnL ฟื้นก็ไม่เปิดเอง), daily stop ไม่ค้าง, hard stop คืน `close_all` ให้ผู้เรียกปิดทุก position

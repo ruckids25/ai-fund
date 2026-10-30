@@ -4,8 +4,8 @@ version: 1
 
 currency: THB
 fx:
-  usdthb: 33.0            # TODO อัปเดตทุกสัปดาห์ (ค่าประมาณ ต้องตรวจก่อนใช้)
-  updated: 2026-10-28
+  usdthb: 33.7            # อัปเดตทุกสัปดาห์ (Yahoo USDTHB=X)
+  updated: 2026-10-30
 
 loss_budget:              # นับ realized + unrealized รวมทุก desk (THB)
   hard_stop: -15000       # ปิดทุก position, หยุดทุกบอท
@@ -26,6 +26,7 @@ desks:
     maint_margin_pct: 0.005  # ใช้ประมาณราคา liq ใน risk_gate (เผื่อไว้สูงกว่าขั้นต่ำของคู่หลัก ต้องเทียบกับ OKX จริง)
   stocks:
     capital_usd: 3000     # paper — ต้องเท่าทุนจริงที่พร้อมใส่ถ้า go-live
+    paper_baseline_usd: 100000  # equity ตอนเริ่มของบัญชี Alpaca paper ใช้คำนวณ PnL — แก้เมื่อ reset บัญชี
     margin: false         # cash only
     max_position_pct: 0.33
     max_total_pct: 1.00
