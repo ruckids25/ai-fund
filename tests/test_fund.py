@@ -89,6 +89,48 @@ def test_approved_buy_submits_bracket_and_logs(ledger, cfg):
     assert (o["symbol"], o["stop"], o["risk_thb"], o["broker_id"]) == ("NVDA", 95.0, 165.0, "b1")
 
 
+def _runs(ledger):
+    with ledger._conn() as c:
+        return c.execute("SELECT * FROM runs").fetchall()
+
+
+def test_run_recorded_and_decisions_tagged(ledger, cfg):
+    go(FakeBroker(), committee({}), ledger, cfg)
+    r = _runs(ledger)[0]
+    assert r["script"] == "fund" and r["strategy_version"] == "stocks-ta-v1" and r["quick_model"]
+    assert len(r["committee_yaml_sha"]) == 12 and len(r["risk_yaml_sha"]) == 12
+    assert r["n_decisions"] == 1 and r["errors"] == "[]"
+    with ledger._conn() as c:
+        assert c.execute("SELECT run_id FROM decisions").fetchone()[0] == r["run_id"]
+
+
+def test_run_records_errors_and_dry(ledger, cfg):
+    go(FakeBroker(), committee({"NVDA": ValueError("boom")}), ledger, cfg, dry=True)
+    r = _runs(ledger)[0]
+    assert r["script"] == "fund_dry" and "committee ValueError" in r["errors"]
+
+
+def test_run_bookkeeping_failure_does_not_stop_trading(ledger, cfg, monkeypatch):
+    monkeypatch.setattr(fund, "_run_metadata", lambda t: 1 / 0)
+    b = FakeBroker()
+    go(b, committee({}), ledger, cfg)
+    assert len(b.submitted) == 1 and not _runs(ledger)
+
+
+def test_finish_run_failure_does_not_lose_the_result(ledger, cfg, monkeypatch):
+    monkeypatch.setattr(ledger, "finish_run", lambda *a: 1 / 0)
+    b = FakeBroker()
+    assert "ส่งออเดอร์แล้ว" in go(b, committee({}), ledger, cfg)[0] and len(b.submitted) == 1
+
+
+def test_broker_failure_recorded_and_raised(ledger, cfg):
+    class Down(FakeBroker):
+        def account(self): raise AlpacaError("GET /v2/account: HTTP 500")
+    with pytest.raises(AlpacaError):
+        go(Down(), committee({}), ledger, cfg)
+    assert "HTTP 500" in _runs(ledger)[0]["errors"]
+
+
 def test_dry_sends_nothing(ledger, cfg):
     stale = {"id": "x", "symbol": "AAPL", "side": "buy", "filled_qty": "0", "client_order_id": "fund-old"}
     b = FakeBroker(orders=[stale])

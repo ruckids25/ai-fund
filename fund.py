@@ -11,14 +11,17 @@ and exits are left to the broker stop/target.
 from __future__ import annotations
 
 import argparse
+import hashlib
+import json
 import logging
+import subprocess
 import sys
 from datetime import date, datetime, timedelta, timezone
 
 from core import notify, risk_gate, risk_state
 from core.alpaca import AlpacaError, AlpacaPaper, order_payload
-from core.config import risk_config, watchlist
-from core.ledger import Ledger
+from core.config import ROOT, load_yaml, risk_config, watchlist
+from core.ledger import Ledger, utcnow
 from core.risk_gate import AccountState
 
 log = logging.getLogger("fund")
@@ -70,12 +73,49 @@ def _round(price):
     return round(price, 2) if isinstance(price, (int, float)) else price
 
 
+def _sha(name: str) -> str:
+    return hashlib.sha256((ROOT / "config" / name).read_bytes()).hexdigest()[:12]
+
+
+def _run_metadata(tickers: list[str]) -> dict:
+    committee_cfg = load_yaml("committee.yaml")
+    git = subprocess.run(["git", "rev-parse", "--short", "HEAD"], cwd=ROOT, capture_output=True, text=True)
+    return {"git_commit": git.stdout.strip() or None, "strategy_version": committee_cfg.get("strategy_version"),
+            "quick_model": committee_cfg["llm"]["quick_model"], "deep_model": committee_cfg["llm"]["deep_model"],
+            "committee_yaml_sha": _sha("committee.yaml"), "risk_yaml_sha": _sha("risk.yaml"),
+            "tickers": json.dumps(tickers)}
+
+
 def run(tickers: list[str] | None = None, *, dry: bool = False, client=None, committee=_committee,
         ledger=None, cfg: dict | None = None, today: date | None = None) -> list[str]:
-    """Return the report lines. Raises AlpacaError if the broker cannot be read."""
+    """Return the report lines. Raises AlpacaError if the broker cannot be read.
+
+    Run bookkeeping is for the journal, so a failure there is logged and trading carries on.
+    """
+    ledger = ledger or Ledger()
+    errors: list[str] = []
+    run_id, started = None, utcnow()
+    try:
+        run_id = ledger.start_run("fund_dry" if dry else "fund",
+                                  **_run_metadata(tickers or watchlist()["stocks"]))
+    except Exception:
+        log.exception("could not record the run")
+    try:
+        return _run(tickers, dry, client, committee, ledger, cfg, today, errors)
+    except AlpacaError as e:
+        errors.append(str(e))
+        raise
+    finally:
+        if run_id:
+            try:
+                ledger.finish_run(run_id, ledger.api_cost_usd(started), errors)
+            except Exception:
+                log.exception("could not finish the run")
+
+
+def _run(tickers, dry, client, committee, ledger, cfg, today, errors: list[str]) -> list[str]:
     cfg = cfg or risk_config()
     client = client or AlpacaPaper()
-    ledger = ledger or Ledger()
     today = today or datetime.now(timezone.utc).date()
     lines = []
 
@@ -115,6 +155,7 @@ def run(tickers: list[str] | None = None, *, dry: bool = False, client=None, com
             dec = committee(ticker, day, ledger)
         except Exception as e:  # one failed ticker must not stop the others
             log.exception("committee %s", ticker)
+            errors.append(f"{ticker}: committee {type(e).__name__}")
             lines.append(f"{ticker}: committee ล้มเหลว ({type(e).__name__})")
             continue
         rating = RATING_TH.get(dec.rating, dec.rating)
@@ -139,6 +180,7 @@ def run(tickers: list[str] | None = None, *, dry: bool = False, client=None, com
             try:
                 order = client.submit(order_payload(ticker, gate.qty, entry, stop, target, f"fund-{day}-{ticker}"))
             except AlpacaError as e:     # e.g. duplicate client_order_id on a rerun
+                errors.append(f"{ticker}: {e}")
                 lines.append(f"{ticker}: ส่งออเดอร์ไม่สำเร็จ ({e})")
                 continue
             ledger.log_order("stocks", "alpaca_paper", ticker, "buy", gate.qty, stop=stop,

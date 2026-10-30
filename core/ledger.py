@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import json
 import sqlite3
+import uuid
 from contextlib import contextmanager
 from datetime import datetime, timezone
 from pathlib import Path
@@ -73,12 +74,41 @@ CREATE TABLE IF NOT EXISTS daily_pnl (
     PRIMARY KEY (date, desk)
 );
 
+CREATE TABLE IF NOT EXISTS runs (
+    run_id              TEXT PRIMARY KEY,
+    ts                  TEXT NOT NULL,
+    script              TEXT NOT NULL,  -- fund / fund_dry / backtest
+    git_commit          TEXT,
+    strategy_version    TEXT,
+    quick_model         TEXT,
+    deep_model          TEXT,
+    committee_yaml_sha  TEXT,
+    risk_yaml_sha       TEXT,
+    tickers             TEXT,           -- JSON
+    n_decisions         INTEGER,
+    api_cost_usd        REAL,
+    errors              TEXT            -- JSON
+);
+
+CREATE TABLE IF NOT EXISTS decision_outcomes (
+    decision_id  INTEGER PRIMARY KEY REFERENCES decisions(id),
+    close0       REAL,
+    ret5         REAL,
+    ret10        REAL,
+    max_up10     REAL,
+    max_dn10     REAL,
+    spy_ret5     REAL,
+    spy_ret10    REAL,
+    labeled_ts   TEXT
+);
+
 CREATE INDEX IF NOT EXISTS idx_orders_status ON orders(status);
 CREATE INDEX IF NOT EXISTS idx_api_costs_ts ON api_costs(ts);
 """
 
 # Additive only: columns added after the first deploy, applied to existing databases on open.
 ADDED_COLUMNS = {
+    "decisions": {"run_id": "TEXT"},
     "orders": {
         "filled_qty": "REAL", "filled_ts": "TEXT", "exit_reason": "TEXT",   # stop / target / manual / close_all
         "r_multiple": "REAL", "hold_days": "REAL", "fees_usd": "REAL",
@@ -96,6 +126,7 @@ class Ledger:
     def __init__(self, path: str | Path | None = None):
         self.path = resolve(str(path or env("LEDGER_PATH", "data/ledger.sqlite")))
         self.path.parent.mkdir(parents=True, exist_ok=True)
+        self.run_id: str | None = None     # set by start_run; tags every later log_decision
         with self._conn() as c:
             c.executescript(SCHEMA)
             self._migrate(c)
@@ -140,7 +171,46 @@ class Ledger:
             "ts": utcnow(), "desk": desk, "symbol": symbol, "stage": stage, "action": action,
             "confidence": confidence, "entry": entry, "stop": stop, "target": target,
             "reason": reason, "payload": json.dumps(payload) if payload is not None else None,
+            "run_id": self.run_id,
         })
+
+    def start_run(self, script: str, **metadata: Any) -> str:
+        """Open a run; decisions logged through this Ledger object carry its run_id from now on."""
+        run_id = uuid.uuid4().hex[:12]
+        self._insert("runs", {"run_id": run_id, "ts": utcnow(), "script": script, **metadata})
+        self.run_id = run_id
+        return run_id
+
+    def finish_run(self, run_id: str, api_cost_usd: float, errors: list[str]) -> None:
+        with self._conn() as c:
+            n = c.execute("SELECT COUNT(*) FROM decisions WHERE run_id = ?", (run_id,)).fetchone()[0]
+            c.execute("UPDATE runs SET n_decisions = ?, api_cost_usd = ?, errors = ? WHERE run_id = ?",
+                      (n, api_cost_usd, json.dumps(errors, ensure_ascii=False), run_id))
+        self.run_id = None
+
+    def decisions_to_label(self) -> list[sqlite3.Row]:
+        """Stock committee decisions of every action whose outcome is still incomplete."""
+        with self._conn() as c:
+            return c.execute(
+                "SELECT d.id, d.symbol, d.payload FROM decisions d "
+                "LEFT JOIN decision_outcomes o ON o.decision_id = d.id "
+                "WHERE d.stage = 'committee' AND d.desk = 'stocks' AND ("
+                "o.decision_id IS NULL OR o.ret5 IS NULL OR o.ret10 IS NULL "
+                "OR o.spy_ret5 IS NULL OR o.spy_ret10 IS NULL)").fetchall()
+
+    def save_outcome(self, decision_id: int, values: dict[str, float]) -> bool:
+        """Fill columns that are still empty and never change a stored value. True if anything was added."""
+        with self._conn() as c:
+            row = c.execute("SELECT * FROM decision_outcomes WHERE decision_id = ?", (decision_id,)).fetchone()
+            new = {k: v for k, v in values.items() if v is not None and (row is None or row[k] is None)}
+            if not new:
+                return False
+            if row is None:
+                c.execute("INSERT INTO decision_outcomes (decision_id) VALUES (?)", (decision_id,))
+            sets = ", ".join(f"{k} = ?" for k in new)
+            c.execute(f"UPDATE decision_outcomes SET {sets}, labeled_ts = ? WHERE decision_id = ?",
+                      (*new.values(), utcnow(), decision_id))
+            return True
 
     def log_order(self, desk: str, venue: str, symbol: str, side: str, qty: float, *,
                   stop: float, risk_thb: float, status: str = "submitted",

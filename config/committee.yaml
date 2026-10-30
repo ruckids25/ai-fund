@@ -1,5 +1,6 @@
 # TradingAgents committee (desks/committee/ta_committee.py)
 version: 1
+strategy_version: stocks-ta-v1         # change it whenever the models, prompts or rules change
 
 # DeepSeek (paid, prepaid balance) since 2026-10-30 — Gemini free tier allows only
 # 20 deep-model requests/day, not enough for a grid. Previous Gemini config:

@@ -92,6 +92,19 @@ ai-fund/
 - 2026-10-28: แก้ RISK_RULES ข้อ 2 และ 7 (ยังไม่มี position เปิด) — เหตุผล: ทุน 15K THB + กฎ margin 20% ทำให้หุ้นแบบเงินสดเสี่ยงได้แค่ ~120 THB/เทรด และเปิด 3 ตัวไม่ได้ จึงแยกทุนหุ้นใน paper = $3,000 (ค่าเริ่มต้น ต้องเท่าทุนจริงที่พร้อมใส่), cap หุ้น 33%/ตัว, งบขาดทุน 15K ยังใช้ร่วมกัน, เพิ่มเกณฑ์ ≥30 เทรด/desk และต้องมีบัญชีหุ้นจริงก่อน go-live ฝั่งหุ้น
 
 ## สถานะล่าสุด
+
+**2026-10-30 — Trade journal Part B: run metadata + outcome labels (รอผู้ใช้ตั้ง cron)**
+- ตาราง `runs` และ `decisions.run_id`: `fund.py` บันทึก git commit, `strategy_version`, โมเดล, sha ของ config, ต้นทุน API, ข้อผิดพลาด ทุกรอบ ถ้าบันทึกล้มเหลว การเทรดยังเดินต่อ
+- `config/committee.yaml` มี `strategy_version: stocks-ta-v1` เปลี่ยนโมเดล/prompt/กฎเมื่อไหร่ต้องเปลี่ยนเวอร์ชัน
+- ตาราง `decision_outcomes` + `scripts/label_outcomes.py`: เก็บ close0, ret5, ret10, max_up10, max_dn10, spy_ret5, spy_ret10 ของทุก decision หุ้นระดับ committee (ซื้อ/ถือ/ขาย ผ่านด่านหรือไม่ก็ตาม) นับ session ตามปฏิทิน NYSE ค่าที่เก็บแล้วไม่ถูกเปลี่ยน
+- cron ที่ผู้ใช้ต้องตั้งเอง: `0 0 * * 2-6 /home/aifund/ai-fund/scripts/cron_label.sh`
+
+**ขั้นตอนเตรียม Part C (ผู้ใช้ทำเอง, Google Sheet)**
+1. สร้าง Google Cloud project ใหม่ (ไม่ใช้ของ PRS) เปิด Google Sheets API สร้าง service account และดาวน์โหลด JSON
+2. สร้าง Google Sheet ใหม่ แชร์สิทธิ์ Editor ให้อีเมลของ service account
+3. `scp` JSON ขึ้น VPS ไว้นอก repo แล้ว `chmod 600` ห้าม commit
+4. ใส่ใน `.env` ทั้ง Mac และ VPS: `GOOGLE_SA_JSON_PATH=` และ `JOURNAL_SHEET_ID=`
+5. หลังบอทสร้างแท็บแล้ว ตั้ง protected range ที่แท็บของบอท จดบันทึกเองในแท็บ `Notes`
 **2026-10-30 — Trade journal Part A: reconcile ออเดอร์ Alpaca → ledger (รอผู้ใช้ตั้ง cron และตรวจเทียบ dashboard)**
 - `scripts/reconcile_orders.py` อ่าน Alpaca อย่างเดียว อัปเดต fill, exit, PnL, R ใน `orders`; คอลัมน์ใหม่เพิ่มอัตโนมัติผ่าน `ADDED_COLUMNS` ใน ledger (เพิ่ม `fx_usdthb` จาก spec เพื่อเก็บ fx ของ pnl_thb)
 - `exit_reason` close_all vs manual: แยกจากข้อความ hard stop ใน halt flag; `fees_usd` ยังว่าง (paper ไม่คิดค่าคอม)
