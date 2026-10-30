@@ -2,7 +2,11 @@
 
 Stop = 2 ATR from entry, trailed at 3 ATR from the best price, tightening only.
 Size and leverage come from core/risk_gate.py, so the numbers stay in config/risk.yaml.
+
+FAILED its backtest (backtests/crypto_trend4h_20261030/conclusion.md): dry-run only, to test
+the plumbing. Its dry-run must not count as the Phase 5 paper run, and it must not go live.
 """
+import time
 from datetime import datetime, timedelta
 
 import talib.abstract as ta
@@ -11,7 +15,9 @@ from freqtrade.exchange import timeframe_to_minutes
 from freqtrade.strategy import IStrategy, stoploss_from_absolute
 from pandas import DataFrame
 
+from core import risk_state
 from core.config import risk_config
+from core.ledger import Ledger
 from core.risk_gate import check_liquidation, size_position
 
 STOP_ATR, TRAIL_ATR = 2.0, 3.0
@@ -49,6 +55,47 @@ class TrendEma4h(IStrategy):
         df.loc[df["cross_down"], "exit_long"] = 1
         df.loc[df["cross_up"], "exit_short"] = 1
         return df
+
+    def _is_trading(self) -> bool:
+        return self.dp.runmode.value in ("live", "dry_run")
+
+    def bot_loop_start(self, current_time: datetime, **kwargs) -> None:
+        """Publish PnL for risk_monitor at most once a minute. A failure just goes stale, which alerts."""
+        now = time.time()
+        if not self._is_trading() or now - getattr(self, "_published", 0) < 60:
+            return
+        day_start = current_time.replace(hour=0, minute=0, second=0, microsecond=0)
+        closed = Trade.get_trades_proxy(is_open=False)
+        opened = Trade.get_trades_proxy(is_open=True)
+        unrealized = sum(t.calc_profit(self.dp.ticker(t.pair)["last"]) for t in opened)
+        risk_state.write_snapshot("crypto_pnl.json", {
+            "realized_usd": sum(t.close_profit_abs or 0 for t in closed),
+            "unrealized_usd": unrealized,
+            "daily_usd": unrealized + sum(t.close_profit_abs or 0 for t in closed
+                                          if t.close_date_utc and t.close_date_utc >= day_start),
+            "open_positions": len(opened)})
+        self._published = now
+
+    def confirm_trade_entry(self, pair: str, order_type: str, amount: float, rate: float,
+                            time_in_force: str, current_time: datetime, entry_tag: str | None,
+                            side: str, **kwargs) -> bool:
+        if not self._is_trading():
+            return True           # backtests have no account state; sizing above still applies
+        dist = STOP_ATR * self._atr(pair, current_time)
+        stop = rate - dist if side == "long" else rate + dist
+        lev = self.leverage(pair, current_time, rate, 1.0, 5.0, entry_tag, side)
+        gate_side = "buy" if side == "long" else "sell"
+        gate = risk_state.approve_crypto_entry(gate_side, rate, stop, lev, amount)
+        Ledger().log_decision("crypto", pair, "risk_gate", "pass" if gate.approved else "reject",
+                              entry=rate, stop=stop, reason="; ".join(gate.reasons) or None,
+                              payload={"qty": gate.qty, "amount": amount, "leverage": lev, "side": side})
+        return gate.approved
+
+    def custom_exit(self, pair: str, trade: Trade, current_time: datetime, current_rate: float,
+                    current_profit: float, **kwargs) -> str | None:
+        if self._is_trading() and risk_state.risk_level() == "hard":
+            return "risk_hard_stop"
+        return None
 
     def _atr(self, pair: str, at: datetime) -> float:
         """ATR of the last candle fully closed at `at`, so size and stop use the same value."""

@@ -3,11 +3,12 @@
   .venv/bin/python risk_monitor.py [--dry]     # --dry prints only: no halt, close or Telegram
 
 Daily stop alerts (risk_gate already blocks new entries), soft stop sets the halt flag,
-hard stop also closes everything. Each alert goes out once per episode, retried until
-Telegram accepts it. Three failed broker reads in a row alert too, because a silent
-monitor looks the same as a healthy one; one summary a day proves it is alive.
+hard stop also closes everything: Alpaca directly, freqtrade by its custom_exit reading the
+published level. Each alert goes out once per episode, retried until Telegram accepts it.
+Three failed broker reads in a row alert too, because a silent monitor looks the same as a
+healthy one; one summary a day proves it is alive. A stale freqtrade snapshot alerts once.
 
-Crypto PnL is not counted yet: nothing trades there until freqtrade exists.
+Every run publishes risk_state.json, which freqtrade needs before any entry.
 """
 from __future__ import annotations
 
@@ -18,7 +19,7 @@ import sys
 from datetime import datetime, timezone
 from pathlib import Path
 
-from core import notify, risk_gate
+from core import notify, risk_gate, risk_state
 from core.alpaca import AlpacaError, AlpacaPaper
 from core.config import resolve, risk_config
 from core.ledger import Ledger
@@ -48,6 +49,14 @@ def check(client, cfg: dict, ledger, seen: dict, *, dry: bool, today: str) -> tu
         client.close_all()
 
     level = limits.level if limits.level in ("daily", "soft", "hard") else "ok"
+    crypto = risk_state.read_snapshot("crypto_pnl.json")
+    crypto_stale = bool(crypto and risk_state.is_stale(crypto))
+    if crypto_stale and not seen.get("crypto_stale"):
+        alerts.append("⚠️ ai-fund: freqtrade ไม่อัปเดต PnL เกิน 15 นาที — ใช้ตัวเลขล่าสุดที่มี ตรวจ service บน VPS")
+    if not dry:
+        risk_state.write_snapshot("risk_state.json", {
+            "level": level, "total_pnl_thb": state.total_pnl_thb, "daily_pnl_thb": state.daily_pnl_thb,
+            "open_positions": state.open_positions, "stocks_open_value_usd": state.stocks_open_value_usd})
     if level != "ok" and (level != seen.get("level") or (level == "daily" and seen.get("level_date") != today)):
         action = {"daily": "ไม่เปิดเทรดใหม่จนถึงวันถัดไป (UTC)", "soft": "halt แล้ว ต้องทบทวนก่อนเปิดใหม่",
                   "hard": "halt และปิดทุก position แล้ว"}[level]
@@ -61,10 +70,16 @@ def check(client, cfg: dict, ledger, seen: dict, *, dry: bool, today: str) -> tu
     if not dry:
         acct = client.account()
         fx = cfg["fx"]["usdthb"]
+        equity = float(acct["equity"])
         unrealized = sum(float(p["unrealized_pl"]) for p in client.positions()) * fx
-        ledger.record_daily_pnl(today, "stocks", state.total_pnl_thb - unrealized, unrealized,
-                                equity_thb=float(acct["equity"]) * fx, fx_usdthb=fx)
-    return alerts, {"level": level, "level_date": today, "heartbeat": today, "failures": 0}
+        total = (equity - cfg["desks"]["stocks"]["paper_baseline_usd"]) * fx
+        ledger.record_daily_pnl(today, "stocks", total - unrealized, unrealized,
+                                equity_thb=equity * fx, fx_usdthb=fx)
+        if crypto:
+            ledger.record_daily_pnl(today, "crypto", crypto["realized_usd"] * fx,
+                                    crypto["unrealized_usd"] * fx, fx_usdthb=fx)
+    return alerts, {"level": level, "level_date": today, "heartbeat": today, "failures": 0,
+                    "crypto_stale": crypto_stale}
 
 
 def main() -> int:

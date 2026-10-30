@@ -4,9 +4,9 @@
   envs/ta/bin/python fund.py --halt "reason"                # no orders until the flag is cleared
 
 The committee only proposes; only an approved evaluate_order() reaches the broker.
-Any failure reading the account stops the run. PnL covers the stocks desk only until
-risk_monitor adds crypto. Committee "sell" opens nothing: stocks are long-only and
-exits are left to the broker stop/target.
+Any failure reading the account stops the run. PnL and the position count include crypto,
+from the snapshot freqtrade writes. Committee "sell" opens nothing: stocks are long-only
+and exits are left to the broker stop/target.
 """
 from __future__ import annotations
 
@@ -15,7 +15,7 @@ import logging
 import sys
 from datetime import date, datetime, timedelta, timezone
 
-from core import notify, risk_gate
+from core import notify, risk_gate, risk_state
 from core.alpaca import AlpacaError, AlpacaPaper, order_payload
 from core.config import risk_config, watchlist
 from core.ledger import Ledger
@@ -29,10 +29,12 @@ def account_state(client, cfg: dict) -> tuple[AccountState, set[str]]:
     fx = cfg["fx"]["usdthb"]
     equity = float(acct["equity"])
     held = {p["symbol"] for p in positions}
+    crypto = risk_state.crypto_pnl()
     return AccountState(
-        total_pnl_thb=(equity - cfg["desks"]["stocks"]["paper_baseline_usd"]) * fx,
-        daily_pnl_thb=(equity - float(acct["last_equity"])) * fx,
-        open_positions=len(held),
+        total_pnl_thb=(equity - cfg["desks"]["stocks"]["paper_baseline_usd"]
+                       + crypto["realized_usd"] + crypto["unrealized_usd"]) * fx,
+        daily_pnl_thb=(equity - float(acct["last_equity"]) + crypto["daily_usd"]) * fx,
+        open_positions=len(held) + crypto["open_positions"],
         stocks_open_value_usd=sum(abs(float(p["market_value"])) for p in positions),
     ), held
 

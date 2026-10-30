@@ -57,6 +57,7 @@ def committee(decisions):
 @pytest.fixture(autouse=True)
 def halt_flag(tmp_path, monkeypatch):
     monkeypatch.setenv("HALT_FLAG_PATH", str(tmp_path / "halt.flag"))
+    monkeypatch.setenv("RISK_STATE_DIR", str(tmp_path))
 
 
 @pytest.fixture

@@ -36,6 +36,7 @@ class Broker:
 @pytest.fixture(autouse=True)
 def halt_flag(tmp_path, monkeypatch):
     monkeypatch.setenv("HALT_FLAG_PATH", str(tmp_path / "halt.flag"))
+    monkeypatch.setenv("RISK_STATE_DIR", str(tmp_path))
 
 
 @pytest.fixture
@@ -99,6 +100,25 @@ def test_dry_changes_nothing(cfg, ledger):
     assert "hard stop" in alerts[0] and not b.closed and not risk_gate.is_halted()
     with ledger._conn() as c:
         assert c.execute("select count(*) from daily_pnl").fetchone()[0] == 0
+
+
+def test_publishes_level_for_freqtrade_but_not_in_dry(cfg, ledger):
+    rm.check(Broker(equity=99500), cfg, ledger, seen_today(), dry=True, today=DAY)
+    assert rm.risk_state.read_snapshot("risk_state.json") is None
+    rm.check(Broker(equity=99500), cfg, ledger, seen_today(), dry=False, today=DAY)
+    snap = rm.risk_state.read_snapshot("risk_state.json")
+    assert snap["level"] == "hard" and snap["total_pnl_thb"] == pytest.approx(-16500)
+
+
+def test_crypto_pnl_counts_towards_limits_and_stale_alerts_once(cfg, ledger, monkeypatch):
+    rm.risk_state.write_snapshot("crypto_pnl.json", {"realized_usd": -230.0, "unrealized_usd": 0.0,
+                                                     "daily_usd": 0.0, "open_positions": 0})
+    alerts, new = rm.check(Broker(), cfg, ledger, seen_today(), dry=False, today=DAY)
+    assert "soft stop" in alerts[0] and not new["crypto_stale"]
+    monkeypatch.setattr(rm.risk_state, "is_stale", lambda s, now=None: True)
+    alerts, new = rm.check(Broker(), cfg, ledger, new, dry=False, today=DAY)
+    assert any("freqtrade" in a for a in alerts) and new["crypto_stale"]
+    assert not any("freqtrade" in a for a in rm.check(Broker(), cfg, ledger, new, dry=False, today=DAY)[0])
 
 
 def test_daily_pnl_snapshot_splits_realized_and_unrealized(cfg, ledger):

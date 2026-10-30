@@ -1,0 +1,14 @@
+[Unit]
+Description=ai-fund freqtrade dry-run (plumbing test, TrendEma4h)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+User=aifund
+WorkingDirectory=/home/aifund/ai-fund
+ExecStart=/home/aifund/ai-fund/scripts/run_freqtrade.sh
+Restart=always
+RestartSec=30
+
+[Install]
+WantedBy=multi-user.target
