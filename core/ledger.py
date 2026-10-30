@@ -109,6 +109,7 @@ CREATE INDEX IF NOT EXISTS idx_api_costs_ts ON api_costs(ts);
 # Additive only: columns added after the first deploy, applied to existing databases on open.
 ADDED_COLUMNS = {
     "decisions": {"run_id": "TEXT"},
+    "daily_pnl": {"open_positions": "INTEGER", "halted": "INTEGER"},
     "orders": {
         "filled_qty": "REAL", "filled_ts": "TEXT", "exit_reason": "TEXT",   # stop / target / manual / close_all
         "r_multiple": "REAL", "hold_days": "REAL", "fees_usd": "REAL",
@@ -241,11 +242,14 @@ class Ledger:
 
     def record_daily_pnl(self, date: str, desk: str, realized_thb: float,
                          unrealized_thb: float, *, equity_thb: float | None = None,
-                         fx_usdthb: float | None = None) -> None:
+                         fx_usdthb: float | None = None, open_positions: int | None = None,
+                         halted: bool | None = None) -> None:
         with self._conn() as c:
             c.execute(
-                "INSERT OR REPLACE INTO daily_pnl VALUES (?, ?, ?, ?, ?, ?)",
-                (date, desk, realized_thb, unrealized_thb, equity_thb, fx_usdthb),
+                "INSERT OR REPLACE INTO daily_pnl (date, desk, realized_thb, unrealized_thb, "
+                "equity_thb, fx_usdthb, open_positions, halted) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+                (date, desk, realized_thb, unrealized_thb, equity_thb, fx_usdthb, open_positions,
+                 None if halted is None else int(halted)),
             )
 
     def open_orders(self, desk: str | None = None) -> list[sqlite3.Row]:

@@ -74,7 +74,8 @@ def check(client, cfg: dict, ledger, seen: dict, *, dry: bool, today: str) -> tu
         unrealized = sum(float(p["unrealized_pl"]) for p in client.positions()) * fx
         total = (equity - cfg["desks"]["stocks"]["paper_baseline_usd"]) * fx
         ledger.record_daily_pnl(today, "stocks", total - unrealized, unrealized,
-                                equity_thb=equity * fx, fx_usdthb=fx)
+                                equity_thb=equity * fx, fx_usdthb=fx,
+                                open_positions=state.open_positions, halted=risk_gate.is_halted())
         if crypto:
             ledger.record_daily_pnl(today, "crypto", crypto["realized_usd"] * fx,
                                     crypto["unrealized_usd"] * fx, fx_usdthb=fx)

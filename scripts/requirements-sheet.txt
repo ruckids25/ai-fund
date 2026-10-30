@@ -1,0 +1,3 @@
+# ติดตั้งเพิ่มใน envs/data สำหรับ scripts/sheet_sync.py
+gspread==6.2.1
+google-auth==2.40.3
