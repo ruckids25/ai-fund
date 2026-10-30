@@ -80,7 +80,7 @@
   - `check_liquidation(entry, stop, lev)` → liq ต้องห่างกว่า stop ≥ 50% ของระยะ stop
   - `is_halted()` → อ่าน halt flag
   - **unit test ครบทุกกฎ** (นี่คือไฟล์สำคัญที่สุดในระบบ)
-- [x] `fund.py` (หุ้น) + `fund.py --halt` / `--dry` (ยังไม่ได้ตั้ง schedule และยังไม่ได้ลง VPS)
+- [x] `fund.py` (หุ้น) + `fund.py --halt` / `--dry` (cron บน VPS 06:05 TH อ–ส)
 - [x] Alpaca paper bracket order (`core/alpaca.py`)
 - [ ] freqtrade dry-run OKX: strategy แรก + เรียก risk_gate ใน callbacks (`custom_stake_amount`, `leverage`, `confirm_trade_entry`), `stoploss_on_exchange: true`, `margin_mode: isolated`
 - [ ] `risk_monitor.py` (ลูป C) อ่าน PnL จาก Alpaca + freqtrade API → รวมเป็น THB → ตัดสินใจ halt

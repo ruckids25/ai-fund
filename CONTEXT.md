@@ -92,6 +92,13 @@ ai-fund/
 - 2026-10-28: แก้ RISK_RULES ข้อ 2 และ 7 (ยังไม่มี position เปิด) — เหตุผล: ทุน 15K THB + กฎ margin 20% ทำให้หุ้นแบบเงินสดเสี่ยงได้แค่ ~120 THB/เทรด และเปิด 3 ตัวไม่ได้ จึงแยกทุนหุ้นใน paper = $3,000 (ค่าเริ่มต้น ต้องเท่าทุนจริงที่พร้อมใส่), cap หุ้น 33%/ตัว, งบขาดทุน 15K ยังใช้ร่วมกัน, เพิ่มเกณฑ์ ≥30 เทรด/desk และต้องมีบัญชีหุ้นจริงก่อน go-live ฝั่งหุ้น
 
 ## สถานะล่าสุด
+**2026-10-30 — Phase 4: `fund.py` เริ่มรันเองบน VPS (Alpaca paper)**
+- cron (UTC): `5 23 * * 1-5 scripts/cron_fund.sh` = 06:05 TH อ–ส, รันแรก 31 ต.ค. เช้า (TH), log ที่ `logs/fund_YYYYMM.log`; `envs/ta` บน VPS แล้ว (TradingAgents c454491, dependency ตรงกับ Mac)
+- `TG_TOKEN`, `TG_FT_TOKEN` และ Alpaca paper key หมุนใหม่แล้ว 2026-10-30 ทั้ง Mac + VPS, Telegram/Alpaca ทดสอบผ่านทั้งสองเครื่อง; บอทคือ @AI_Fund_Alerts_bot
+- dry-run NVDA: Mac (วันที่ 10-30 ตลาดยังไม่ปิด จากบั๊กที่แก้แล้ว) = Overweight, VPS (10-29) = Underweight → ต้องดูความนิ่งของ committee ตอน paper
+- 300 บาท ≈ $8.90 ต่อเทรด + ซื้อหุ้นเต็มตัว: stop เกิน ~$8.90 ต่อหุ้นถูกปฏิเสธ; สัญญาณซื้อจาก grid ผ่าน gate 12/15 ตัว
+- ค้าง Phase 4: `risk_monitor` (ตอนนี้เช็ก limits แค่วันละครั้งและ PnL หุ้นเท่านั้น), freqtrade + เสนอ strategy crypto + OKX sub-account, lookahead-analysis, backup ledger; เกณฑ์ผ่าน 5 วันติดต้องนับเมื่อครบลูปรวม kill switch
+
 **2026-10-30 — Phase 4: `fund.py` + Alpaca paper (ยังไม่ได้ตั้ง schedule)**
 - `core/alpaca.py`: stdlib, URL fix ที่ paper; entry = limit GTC + stop ที่ broker เพราะขา stop ของ bracket แบบ DAY หมดอายุตอนตลาดปิด; fund.py ยกเลิก entry ที่ค้างในรอบถัดไป
 - `fund.py`: ปฏิเสธถ้าตลาดเปิด, อ่านบัญชีไม่ได้ = หยุด, เช็ก limits ก่อนจ่ายค่า LLM, ข้ามตัวที่ถืออยู่, ≤5 ตัว/วัน, หยุด committee เมื่อค่า API ถึงเพดาน, ออเดอร์ใหม่นับรวมเพดาน 3 ตัว; committee "sell" ไม่เปิดอะไร (long-only)
