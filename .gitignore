@@ -29,3 +29,4 @@ __pycache__/
 # backtest runtime logs
 backtests/*/run.log
 backtests/*/ta/
+crypto/freqtrade/user_data/backtest_results/

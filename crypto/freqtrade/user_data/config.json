@@ -1,0 +1,22 @@
+{
+  "dry_run": true,
+  "dry_run_wallet": 445,
+  "trading_mode": "futures",
+  "margin_mode": "isolated",
+  "stake_currency": "USDT",
+  "stake_amount": "unlimited",
+  "max_open_trades": 2,
+  "tradable_balance_ratio": 1.0,
+  "timeframe": "4h",
+  "exchange": {
+    "name": "okx",
+    "key": "",
+    "secret": "",
+    "password": "",
+    "pair_whitelist": ["BTC/USDT:USDT", "ETH/USDT:USDT"]
+  },
+  "pairlists": [{"method": "StaticPairList"}],
+  "entry_pricing": {"price_side": "other", "use_order_book": false, "price_last_balance": 0.0},
+  "exit_pricing": {"price_side": "other", "use_order_book": false},
+  "bot_name": "ai-fund-crypto"
+}
