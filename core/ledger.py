@@ -77,6 +77,16 @@ CREATE INDEX IF NOT EXISTS idx_orders_status ON orders(status);
 CREATE INDEX IF NOT EXISTS idx_api_costs_ts ON api_costs(ts);
 """
 
+# Additive only: columns added after the first deploy, applied to existing databases on open.
+ADDED_COLUMNS = {
+    "orders": {
+        "filled_qty": "REAL", "filled_ts": "TEXT", "exit_reason": "TEXT",   # stop / target / manual / close_all
+        "r_multiple": "REAL", "hold_days": "REAL", "fees_usd": "REAL",
+        "fx_usdthb": "REAL",                                                # fx used for pnl_thb
+        "last_sync_ts": "TEXT",
+    },
+}
+
 
 def utcnow() -> str:
     return datetime.now(timezone.utc).isoformat(timespec="seconds")
@@ -88,6 +98,20 @@ class Ledger:
         self.path.parent.mkdir(parents=True, exist_ok=True)
         with self._conn() as c:
             c.executescript(SCHEMA)
+            self._migrate(c)
+
+    @staticmethod
+    def _migrate(c: sqlite3.Connection) -> None:
+        for table, columns in ADDED_COLUMNS.items():
+            have = {r["name"] for r in c.execute(f"PRAGMA table_info({table})")}
+            for name, kind in columns.items():
+                if name in have:
+                    continue
+                try:
+                    c.execute(f"ALTER TABLE {table} ADD COLUMN {name} {kind}")
+                except sqlite3.OperationalError as e:
+                    if "duplicate column" not in str(e):   # another process just added it
+                        raise
 
     @contextmanager
     def _conn(self) -> Iterator[sqlite3.Connection]:
@@ -162,6 +186,11 @@ class Ledger:
             args = (desk,)
         with self._conn() as c:
             return c.execute(q, args).fetchall()
+
+    def orders_to_reconcile(self, venue: str) -> list[sqlite3.Row]:
+        with self._conn() as c:
+            return c.execute("SELECT * FROM orders WHERE venue = ? AND status IN ('submitted', 'filled')",
+                             (venue,)).fetchall()
 
     def realized_pnl_thb(self, since: str | None = None) -> float:
         q = "SELECT COALESCE(SUM(pnl_thb), 0) FROM orders WHERE status = 'closed'"

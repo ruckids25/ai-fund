@@ -92,6 +92,13 @@ ai-fund/
 - 2026-10-28: แก้ RISK_RULES ข้อ 2 และ 7 (ยังไม่มี position เปิด) — เหตุผล: ทุน 15K THB + กฎ margin 20% ทำให้หุ้นแบบเงินสดเสี่ยงได้แค่ ~120 THB/เทรด และเปิด 3 ตัวไม่ได้ จึงแยกทุนหุ้นใน paper = $3,000 (ค่าเริ่มต้น ต้องเท่าทุนจริงที่พร้อมใส่), cap หุ้น 33%/ตัว, งบขาดทุน 15K ยังใช้ร่วมกัน, เพิ่มเกณฑ์ ≥30 เทรด/desk และต้องมีบัญชีหุ้นจริงก่อน go-live ฝั่งหุ้น
 
 ## สถานะล่าสุด
+**2026-10-30 — Trade journal Part A: reconcile ออเดอร์ Alpaca → ledger (รอผู้ใช้ตั้ง cron และตรวจเทียบ dashboard)**
+- `scripts/reconcile_orders.py` อ่าน Alpaca อย่างเดียว อัปเดต fill, exit, PnL, R ใน `orders`; คอลัมน์ใหม่เพิ่มอัตโนมัติผ่าน `ADDED_COLUMNS` ใน ledger (เพิ่ม `fx_usdthb` จาก spec เพื่อเก็บ fx ของ pnl_thb)
+- `exit_reason` close_all vs manual: แยกจากข้อความ hard stop ใน halt flag; `fees_usd` ยังว่าง (paper ไม่คิดค่าคอม)
+- `realized_pnl_thb()` ไม่ถูกใช้ในการตัดสินใจเทรด risk_monitor คำนวณจาก equity จึงไม่นับซ้ำ
+- **ยังไม่ได้พิสูจน์กับออเดอร์จริง:** ทดสอบด้วยข้อมูลจำลอง และเรียก API จริงได้แต่ยังไม่มีไม้ รูปแบบข้อมูลของ leg ที่ fill และ activities ต้องเทียบเมื่อมีไม้แรก
+- Part B, C ยังไม่เริ่ม (`backtests`/spec อยู่ในแชต ควรเก็บเป็นไฟล์เมื่อทำต่อ)
+
 **2026-10-30 — Phase 4: เชื่อม freqtrade dry-run กับ risk_gate + risk_monitor (A ใช้ทดสอบระบบเท่านั้น)**
 - ข้าม venv ด้วยไฟล์ snapshot `core/risk_state.py`: freqtrade เขียน `data/crypto_pnl.json` ทุกนาที, risk_monitor รวม PnL + เขียน `data/risk_state.json` ทุก 5 นาที; ก่อนทุก entry freqtrade เรียก `approve_crypto_entry` — snapshot หายหรือเกิน 15 นาที = ปฏิเสธ; hard stop ปิดฝั่ง crypto ผ่าน `custom_exit`
 - PnL + จำนวน position ใน fund.py และ risk_monitor นับ crypto แล้ว; PnL รายวันฝั่ง crypto = realized วันนี้ + unrealized ตอนนี้ (ประมาณ)

@@ -73,6 +73,29 @@ class AlpacaPaper:
     def open_orders(self) -> list[dict]:
         return self._call("GET", "/v2/orders", status="open", nested="true", limit=500)
 
+    def orders(self, status: str = "all", after: str | None = None, nested: bool = True,
+               limit: int = 500) -> list[dict]:
+        params = {"status": status, "nested": str(nested).lower(), "limit": limit}
+        if after:
+            params["after"] = after
+        return self._call("GET", "/v2/orders", **params)
+
+    def order(self, order_id: str, nested: bool = True) -> dict:
+        return self._call("GET", f"/v2/orders/{order_id}", nested=str(nested).lower())
+
+    def activities(self, activity_types: str = "FILL", after: str | None = None) -> list[dict]:
+        """Oldest first, every page."""
+        params = {"activity_types": activity_types, "direction": "asc", "page_size": 100}
+        if after:
+            params["after"] = after
+        rows: list[dict] = []
+        while True:
+            page = self._call("GET", "/v2/account/activities", **params)
+            rows += page
+            if len(page) < params["page_size"]:
+                return rows
+            params["page_token"] = page[-1]["id"]
+
     def submit(self, payload: dict) -> dict:
         return self._call("POST", "/v2/orders", payload)
 
