@@ -96,7 +96,8 @@ ai-fund/
 - ข้าม venv ด้วยไฟล์ snapshot `core/risk_state.py`: freqtrade เขียน `data/crypto_pnl.json` ทุกนาที, risk_monitor รวม PnL + เขียน `data/risk_state.json` ทุก 5 นาที; ก่อนทุก entry freqtrade เรียก `approve_crypto_entry` — snapshot หายหรือเกิน 15 นาที = ปฏิเสธ; hard stop ปิดฝั่ง crypto ผ่าน `custom_exit`
 - PnL + จำนวน position ใน fund.py และ risk_monitor นับ crypto แล้ว; PnL รายวันฝั่ง crypto = realized วันนี้ + unrealized ตอนนี้ (ประมาณ)
 - ลองรันบน Mac ~2 นาที: RUNNING ไม่มี error, เขียน crypto_pnl ได้, backtest ผลเดิม (218 เทรด) — **ยังไม่เคยเห็น entry จริงผ่าน gate ใน dry-run** (A เทรด ~3.8 ครั้ง/เดือน)
-- `envs/freqtrade` บน VPS แล้ว; service ยังไม่เริ่ม รอยืนยันว่า `TG_FT_TOKEN` (@AI_2trade_bot) ไม่ใช่ของ PRS และให้ผู้ใช้ติดตั้ง `scripts/ai-fund-freqtrade.service`
+- service `ai-fund-freqtrade` รันบน VPS ตั้งแต่ 11:39 UTC (ผู้ใช้ติดตั้ง + ยืนยันว่า @AI_2trade_bot เป็นของ ai-fund), snapshot ไหลครบ
+- Kill switch: `fund.py --halt` ทดสอบผ่าน 2026-10-30 (ปฏิเสธทั้งหุ้นและ crypto, เคลียร์แล้ว); ค้างทดสอบ Telegram `/stopentry`, `/forceexit all` และปิด API key ด้วยมือ
 - ห้ามนับ dry-run ของ A เป็น paper Phase 5 และห้าม live
 
 **2026-10-30 — Phase 4 crypto: strategy B (สวนกลับ 1h) ไม่ผ่านเช่นกัน**
