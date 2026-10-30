@@ -74,7 +74,7 @@
 **เกณฑ์ผ่าน:** รู้ $/รอบ, รู้ว่างบ $30/เดือน รันได้กี่ ticker/วันจริงๆ, มีผลเทียบกับ buy-and-hold
 
 ### Phase 4 — Risk gate + Execution loop (สัปดาห์ 4–5)
-- [ ] `core/risk_gate.py` — pure Python (พึ่งแค่ pyyaml) เพื่อ `pip install -e` เข้าได้ทุก venv
+- [x] `core/risk_gate.py` — pure Python (พึ่งแค่ pyyaml) เพื่อ `pip install -e` เข้าได้ทุก venv
   - `size_position(entry, stop, fx)` → จำนวนหุ้น/contract จาก 300 THB
   - `check_limits()` → daily / soft / hard / max 3 positions / margin ≤ 20%
   - `check_liquidation(entry, stop, lev)` → liq ต้องห่างกว่า stop ≥ 50% ของระยะ stop

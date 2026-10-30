@@ -23,6 +23,7 @@ desks:
     margin_mode: isolated
     max_margin_pct: 0.20  # margin ต่อ position / ทุน desk
     liq_buffer_pct: 0.50  # liq ต้องห่างกว่า stop >= 50% ของระยะ stop
+    maint_margin_pct: 0.005  # ใช้ประมาณราคา liq ใน risk_gate (เผื่อไว้สูงกว่าขั้นต่ำของคู่หลัก ต้องเทียบกับ OKX จริง)
   stocks:
     capital_usd: 3000     # paper — ต้องเท่าทุนจริงที่พร้อมใส่ถ้า go-live
     margin: false         # cash only

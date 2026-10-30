@@ -92,6 +92,14 @@ ai-fund/
 - 2026-10-28: แก้ RISK_RULES ข้อ 2 และ 7 (ยังไม่มี position เปิด) — เหตุผล: ทุน 15K THB + กฎ margin 20% ทำให้หุ้นแบบเงินสดเสี่ยงได้แค่ ~120 THB/เทรด และเปิด 3 ตัวไม่ได้ จึงแยกทุนหุ้นใน paper = $3,000 (ค่าเริ่มต้น ต้องเท่าทุนจริงที่พร้อมใส่), cap หุ้น 33%/ตัว, งบขาดทุน 15K ยังใช้ร่วมกัน, เพิ่มเกณฑ์ ≥30 เทรด/desk และต้องมีบัญชีหุ้นจริงก่อน go-live ฝั่งหุ้น
 
 ## สถานะล่าสุด
+**2026-10-30 — Phase 4 เริ่ม: `core/risk_gate.py` เสร็จ (ยังไม่มีการส่งออเดอร์)**
+- ตัดสินใจทำ Phase 4 ก่อนทดสอบ committee เพิ่ม; committee ใช้ใน paper เท่านั้น ยังไม่มีหลักฐาน edge พอสำหรับเงินจริง
+- `evaluate_order()` คือทางเข้าเดียวของทุกออเดอร์: ตรวจ halt/limits/stop แล้วคำนวณ size; ข้อมูลผิดหรือไม่มี stop = reject; soft/hard stop เขียน halt flag ค้างไว้จนคนเคลียร์ (PnL ฟื้นก็ไม่เปิดเอง), daily stop ไม่ค้าง, hard stop คืน `close_all` ให้ผู้เรียกปิดทุก position
+- เพิ่ม `desks.crypto.maint_margin_pct: 0.005` ใน risk.yaml (ไม่มี position เปิด) เพื่อประมาณราคา liq — เป็นค่าประมาณ ต้องเทียบกับ OKX จริง
+- tests/test_risk_gate.py 44 ผ่าน รวมค่าขอบทุกกฎ
+- ยังไม่มีใครเรียก risk_gate; `AccountState` ต้องมาจาก risk_monitor/broker (ยังไม่ได้ทำ)
+- **ก่อนทำต่อ (ผู้ใช้):** revoke/สร้าง Telegram + Alpaca key ใหม่, ตรวจ `fx.usdthb`, OKX sub-account (whitelist IP ของ VPS ใหม่)
+
 **2026-10-30 — Phase 3: grid DeepSeek 40 cell จบ → ยังไม่เห็น edge (buy +0.14% vs ถือทุก cell +0.55% ต่อ 5 sessions)**
 - รายละเอียด + ข้อจำกัดที่ `backtests/ta_20261030_deepseek/conclusion.md`; buy − sell = −0.75% (t ≈ −0.68) ไม่มีนัย ตัวอย่างเล็ก; ค่าจริง $6.41 ≈ $0.16/cell → งบ $30/เดือน ≈ 9 ตัว/วัน
 - **ค้างตัดสินใจ:** จะไปต่อ Phase 4 ด้วย committee นี้ไหม หรือทดสอบเพิ่มก่อน (ยังไม่ตัดสิน)
