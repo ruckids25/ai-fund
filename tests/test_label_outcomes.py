@@ -167,3 +167,16 @@ def test_run_id_tags_decisions_and_finish_counts_them(ledger):
         r = c.execute("SELECT * FROM runs").fetchone()
     assert ids[before] is None and ids[tagged] == run_id and ids[after] is None
     assert r["n_decisions"] == 1 and r["api_cost_usd"] == 0.5 and json.loads(r["errors"]) == ["NVDA: boom"]
+
+
+def test_close0_is_only_the_committee_session():
+    c = flat(SESSIONS[:6])
+    del c[DAY]
+    v = lo.label(c, c, DAY, SESSIONS)
+    assert v["close0"] is None and v["ret5"] is None
+
+
+def test_nan_is_never_stored(ledger):
+    did = add_decision(ledger)
+    assert ledger.save_outcome(did, {"close0": float("nan")}) is False
+    assert outcome(ledger, did) is None

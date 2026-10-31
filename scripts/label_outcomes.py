@@ -31,8 +31,8 @@ def _forward(candles: Candles, day: date, sessions: list[date], n: int) -> list[
 
 
 def _close0(candles: Candles, day: date) -> float | None:
-    before = [d for d in candles if d <= day]
-    return candles[max(before)][2] if before else None
+    """Only the session the committee used: an earlier close would be the wrong baseline."""
+    return candles[day][2] if day in candles else None
 
 
 def _ret(candles: Candles, day: date, sessions: list[date], n: int) -> float | None:

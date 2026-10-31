@@ -55,7 +55,8 @@ def get_stock_daily(ticker: str, days: int, *, now: datetime | None = None) -> "
     sched = nyse_sessions(df.index[-1].date(), df.index[-1].date())
     if not sched.empty and sched["market_close"].iloc[0] > now:
         df = df.iloc[:-1]
-    return df.tail(days)
+    # Yahoo can leave a finished session's close empty for hours: not a usable candle yet
+    return df.dropna(subset=COLUMNS).tail(days)
 
 
 # ---------- crypto ----------

@@ -56,7 +56,8 @@ def _payload(row: dict) -> dict:
 
 
 def _table(columns: list[str], rows: list[dict]) -> list[list]:
-    return [columns] + [["" if r.get(c) is None else r[c] for c in columns] for r in rows]
+    # v != v is NaN, which the Sheets API refuses and JSON payloads can carry
+    return [columns] + [["" if r.get(c) is None or r[c] != r[c] else r[c] for c in columns] for r in rows]
 
 
 def _committee_of(decisions: list[dict]) -> dict[int, dict]:

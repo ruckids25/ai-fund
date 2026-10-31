@@ -201,3 +201,7 @@ def test_llm_text_starting_with_equals_is_sent_raw(ledger):
     book = FakeBook()
     ss.write_tabs(book, tabs_of(ledger))    # FakeBook asserts RAW
     assert as_dicts(book.cells["Decisions"])[-1]["rationale_short"].startswith("=IMPORTXML")
+
+
+def test_nan_becomes_blank():
+    assert ss._table(["a", "b"], [{"a": float("nan"), "b": 1.0}]) == [["a", "b"], ["", 1.0]]

@@ -203,7 +203,8 @@ class Ledger:
         """Fill columns that are still empty and never change a stored value. True if anything was added."""
         with self._conn() as c:
             row = c.execute("SELECT * FROM decision_outcomes WHERE decision_id = ?", (decision_id,)).fetchone()
-            new = {k: v for k, v in values.items() if v is not None and (row is None or row[k] is None)}
+            new = {k: v for k, v in values.items()
+                   if v is not None and v == v and (row is None or row[k] is None)}  # v != v: NaN
             if not new:
                 return False
             if row is None:
