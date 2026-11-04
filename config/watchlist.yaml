@@ -1,7 +1,9 @@
-stocks:
+stocks:                   # ไม่เกิน api.max_committee_tickers_per_day (5)
   - NVDA
   - AAPL
-  - MSFT
+  - TE
+  - DFTX
+  - NBIS
 
 crypto:                   # ccxt unified symbol ของ OKX perpetual swap
   - BTC/USDT:USDT

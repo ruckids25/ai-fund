@@ -8,7 +8,7 @@ import pytest
 import fund
 from core import risk_gate
 from core.alpaca import AlpacaPaper, AlpacaError, order_payload
-from core.config import risk_config
+from core.config import load_yaml, risk_config
 from core.ledger import Ledger
 
 
@@ -97,7 +97,7 @@ def _runs(ledger):
 def test_run_recorded_and_decisions_tagged(ledger, cfg):
     go(FakeBroker(), committee({}), ledger, cfg)
     r = _runs(ledger)[0]
-    assert r["script"] == "fund" and r["strategy_version"] == "stocks-ta-v1" and r["quick_model"]
+    assert r["script"] == "fund" and r["strategy_version"] == load_yaml("committee.yaml")["strategy_version"] and r["quick_model"]
     assert len(r["committee_yaml_sha"]) == 12 and len(r["risk_yaml_sha"]) == 12
     assert r["n_decisions"] == 1 and r["errors"] == "[]"
     with ledger._conn() as c:

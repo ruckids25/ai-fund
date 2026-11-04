@@ -93,6 +93,11 @@ ai-fund/
 
 ## สถานะล่าสุด
 
+**2026-11-04 — เปลี่ยนรายชื่อหุ้นเป็น NVDA, AAPL, TE, DFTX, NBIS (`stocks-ta-v2`)**
+- ตัด MSFT (stop กว้างเกินเพดาน 300 บาท/ไม้ ถูกปฏิเสธ) ไม่เพิ่ม NUKX (ซื้อขายเฉลี่ย ~3,000 หุ้น/วัน สภาพคล่องต่ำเกิน) คง 5 ตัวตามเพดาน committee/วัน
+- NBIS แกว่งเฉลี่ย ~$13.7/วัน คาดว่าจะถูกด่านความเสี่ยงปฏิเสธบ่อย TE, DFTX, NBIS ยังไม่เคยอยู่ใน backtest ของ committee
+- decision ก่อนหน้าเป็น `stocks-ta-v1` แท็บ Summary แยกผลตามเวอร์ชัน ยังอยู่ Phase 4 จึงไม่กระทบการนับ 30 วันของ Phase 5
+
 **2026-10-30 — Trade journal Part C: Google Sheet จาก ledger ทางเดียว (รอผู้ใช้ตรวจ Sheet และตั้ง cron)**
 - `scripts/sheet_sync.py` เขียนแท็บ Trades, Decisions, Daily, Runs, Summary ไม่แตะแท็บอื่น sync จริงบน VPS 2 รอบได้ค่าเหมือนกัน และ Sheet ID ผิดทำให้ wrapper จบด้วย exit 1
 - `daily_pnl` เพิ่ม `open_positions`, `halted` ที่ `risk_monitor` บันทึก เพื่อให้ Daily มาจาก ledger ล้วน
