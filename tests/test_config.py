@@ -25,5 +25,7 @@ def test_risk_values_are_sane():
 
 def test_watchlist():
     w = watchlist()
-    assert w["stocks"] == ["NVDA", "AAPL", "MSFT"]
+    # every listed stock must get a committee run each day
+    assert 0 < len(w["stocks"]) <= risk_config()["api"]["max_committee_tickers_per_day"]
+    assert len(set(w["stocks"])) == len(w["stocks"])
     assert all(sym.endswith(":USDT") for sym in w["crypto"])
